@@ -1,0 +1,496 @@
+esphome:
+  name: reterminal-weather
+  friendly_name: "reTerminal Weather"
+  on_boot:
+    priority: 600
+    then:
+      - output.turn_on: bsp_battery_enable
+      - delay: 500ms
+
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: esp-idf
+
+# ============ LOGGING ============
+logger:
+  level: INFO
+  hardware_uart: USB_CDC
+
+# ============ HA / OTA / WIFI ============
+api:
+  encryption:
+    key: ""
+
+ota:
+  - platform: esphome
+    password: ""
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "reTerminal Weather Fallback"
+    password: ""
+
+captive_portal:
+
+# ============ HARDWARE ============
+psram:
+  mode: octal
+  speed: 80MHz
+
+spi:
+  clk_pin: GPIO7
+  mosi_pin: GPIO9
+
+i2c:
+  scl: GPIO20
+  sda: GPIO19
+  scan: true
+
+# ============ OUTPUTS ============
+output:
+  - platform: gpio
+    pin: GPIO6
+    id: led_output
+    inverted: true
+  - platform: gpio
+    pin: GPIO21
+    id: bsp_battery_enable
+
+light:
+  - platform: binary
+    name: "Onboard LED"
+    output: led_output
+    id: onboard_led
+
+# ============ SENSORER ============
+sensor:
+  - platform: adc
+    pin: GPIO1
+    name: "Batteri-spenning"
+    id: battery_voltage
+    update_interval: 60s
+    attenuation: 12db
+    filters:
+      - multiply: 2.0
+
+  - platform: template
+    name: "Batteri %"
+    id: battery_pct
+    unit_of_measurement: "%"
+    device_class: battery
+    state_class: measurement
+    lambda: 'return id(battery_voltage).state;'
+    update_interval: 60s
+    filters:
+      - calibrate_linear:
+          - 4.15 -> 100.0
+          - 3.96 -> 90.0
+          - 3.85 -> 70.0
+          - 3.75 -> 50.0
+          - 3.58 -> 30.0
+          - 3.41 -> 10.0
+          - 3.27 -> 0.0
+      - clamp:
+          min_value: 0
+          max_value: 100
+
+# ============ KNAPPER ============
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO3
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Knapp gronn"
+    id: btn_green
+    on_press:
+      then:
+        - logger.log: "GRONN: henter nye data"
+        - light.turn_on: onboard_led
+        - http_request.get:
+            url: "http://192.168.68.114/weather-eink.php"
+            capture_response: true
+            max_response_buffer_size: 4096
+            on_response:
+              then:
+                - lambda: |-
+                    ESP_LOGI("wx", "HTTP=%d len=%d",
+                             response->status_code, (int) body.length());
+
+                    if (response->status_code != 200) {
+                      id(wx_status) = "HTTP feil";
+                      return;
+                    }
+
+                    bool ok = json::parse_json(body, [](JsonObject root) -> bool {
+                      id(wx_loc)     = root["wx_loc"]     | std::string("?");
+                      id(wx_now)     = root["wx_now"]     | std::string("?");
+                      id(wx_temp)    = root["wx_temp"]    | 0.0f;
+                      id(wx_hum)     = root["wx_hum"]     | 0;
+                      id(wx_icon)    = root["wx_icon"]    | std::string("cloud");
+                      id(wx_temp_in) = root["wx_temp_in"] | 0.0f;
+
+                      JsonArrayConst hr = root["hourly"];
+                      for (int i = 0; i < 5 && i < (int) hr.size(); i++) {
+                        JsonObjectConst h = hr[i];
+                        id(h_time)[i] = h["t"]    | std::string("--");
+                        id(h_icon)[i] = h["icon"] | std::string("cloud");
+                        id(h_temp)[i] = h["temp"] | 0.0f;
+                      }
+
+                      JsonArrayConst dy = root["daily"];
+                      for (int i = 0; i < 5 && i < (int) dy.size(); i++) {
+                        JsonObjectConst d = dy[i];
+                        id(d_day)[i]  = d["d"]    | std::string("--");
+                        id(d_icon)[i] = d["icon"] | std::string("cloud");
+                        id(d_hi)[i]   = d["hi"]   | 0.0f;
+                        id(d_lo)[i]   = d["lo"]   | 0.0f;
+                      }
+                      return true;
+                    });
+
+                    if (ok) {
+                      id(wx_status) = "";
+                    } else {
+                      id(wx_status) = "PARSE FAIL";
+                    }
+        - light.turn_off: onboard_led
+        - component.update: my_display
+
+  - platform: gpio
+    pin:
+      number: GPIO4
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Knapp hvit hoyre"
+    id: btn_white_right
+    on_press:
+      then:
+        - logger.log: "HVIT HOYRE: slaar AV lampe 2"
+        - light.turn_on: onboard_led
+        - http_request.get:
+            url: "http://192.168.68.114/ha-proxy.php?service=button.press&entity_id=button.rf433_sender_lampe_2_av"
+            capture_response: false
+            on_response:
+              then:
+                - lambda: |-
+                    ESP_LOGI("rf433", "Lampe 2 AV - HTTP=%d",
+                             response->status_code);
+        - delay: 200ms
+        - light.turn_off: onboard_led
+
+  - platform: gpio
+    pin:
+      number: GPIO5
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Knapp hvit venstre"
+    id: btn_white_left
+    on_press:
+      then:
+        - logger.log: "HVIT VENSTRE: slaar PAA lampe 2"
+        - light.turn_on: onboard_led
+        - http_request.get:
+            url: "http://192.168.68.114/ha-proxy.php?service=button.press&entity_id=button.rf433_sender_lampe_2_pa"
+            capture_response: false
+            on_response:
+              then:
+                - lambda: |-
+                    ESP_LOGI("rf433", "Lampe 2 PAA - HTTP=%d",
+                             response->status_code);
+        - delay: 200ms
+        - light.turn_off: onboard_led
+
+# ============ FONTER ============
+font:
+  - file: "gfonts://Inter@700"
+    id: f_big
+    size: 48
+    bpp: 1
+    glyphs: "0123456789.,:°-+ "
+
+  - file: "gfonts://Inter@700"
+    id: f_med
+    size: 30
+    bpp: 1
+    glyphs: "ABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅabcdefghijklmnopqrstuvwxyzæøå0123456789.,:°-+ "
+
+  - file: "gfonts://Inter@600"
+    id: f_temp
+    size: 22
+    bpp: 1
+    glyphs: "0123456789.,:°-+ "
+
+  - file: "gfonts://JetBrains+Mono@400"
+    id: f_mono_sm
+    size: 14
+    bpp: 1
+    glyphs: "ABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅabcdefghijklmnopqrstuvwxyzæøå0123456789.,:°%-+=/ "
+
+  - file: "gfonts://JetBrains+Mono@400"
+    id: f_mono_xs
+    size: 11
+    bpp: 1
+    glyphs: "ABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅabcdefghijklmnopqrstuvwxyzæøå0123456789.,:°%-+=?/ "
+
+# ============ GLOBALS ============
+globals:
+  - id: wx_loc
+    type: std::string
+    restore_value: no
+    initial_value: '"---"'
+  - id: wx_now
+    type: std::string
+    restore_value: no
+    initial_value: '"---"'
+  - id: wx_temp
+    type: float
+    restore_value: no
+    initial_value: '0.0'
+  - id: wx_hum
+    type: int
+    restore_value: no
+    initial_value: '0'
+  - id: wx_icon
+    type: std::string
+    restore_value: no
+    initial_value: '"cloud"'
+  - id: wx_temp_in
+    type: float
+    restore_value: no
+    initial_value: '0.0'
+
+  - id: h_time
+    type: std::string[5]
+    restore_value: no
+  - id: h_icon
+    type: std::string[5]
+    restore_value: no
+  - id: h_temp
+    type: float[5]
+    restore_value: no
+
+  - id: d_day
+    type: std::string[5]
+    restore_value: no
+  - id: d_icon
+    type: std::string[5]
+    restore_value: no
+  - id: d_hi
+    type: float[5]
+    restore_value: no
+  - id: d_lo
+    type: float[5]
+    restore_value: no
+
+  - id: wx_status
+    type: std::string
+    restore_value: no
+    initial_value: '""'
+
+# ============ TIME ============
+time:
+  - platform: sntp
+    id: ntp_time
+    timezone: "Europe/Oslo"
+
+# ============ HTTP POLL + DISPLAY REFRESH ============
+http_request:
+  useragent: "esphome-reterminal"
+  timeout: 8s
+
+interval:
+  - interval: 300s   # 5 min
+    then:
+      - http_request.get:
+          url: "http://192.168.68.114/weather-eink.php"
+          capture_response: true
+          max_response_buffer_size: 4096
+          on_response:
+            then:
+              - lambda: |-
+                  ESP_LOGI("wx", "HTTP=%d len=%d",
+                           response->status_code, (int) body.length());
+
+                  if (response->status_code != 200) {
+                    id(wx_status) = "HTTP feil";
+                    return;
+                  }
+
+                  bool ok = json::parse_json(body, [](JsonObject root) -> bool {
+                    id(wx_loc)     = root["wx_loc"]     | std::string("?");
+                    id(wx_now)     = root["wx_now"]     | std::string("?");
+                    id(wx_temp)    = root["wx_temp"]    | 0.0f;
+                    id(wx_hum)     = root["wx_hum"]     | 0;
+                    id(wx_icon)    = root["wx_icon"]    | std::string("cloud");
+                    id(wx_temp_in) = root["wx_temp_in"] | 0.0f;
+
+                    JsonArrayConst hr = root["hourly"];
+                    for (int i = 0; i < 5 && i < (int) hr.size(); i++) {
+                      JsonObjectConst h = hr[i];
+                      id(h_time)[i] = h["t"]    | std::string("--");
+                      id(h_icon)[i] = h["icon"] | std::string("cloud");
+                      id(h_temp)[i] = h["temp"] | 0.0f;
+                    }
+
+                    JsonArrayConst dy = root["daily"];
+                    for (int i = 0; i < 5 && i < (int) dy.size(); i++) {
+                      JsonObjectConst d = dy[i];
+                      id(d_day)[i]  = d["d"]    | std::string("--");
+                      id(d_icon)[i] = d["icon"] | std::string("cloud");
+                      id(d_hi)[i]   = d["hi"]   | 0.0f;
+                      id(d_lo)[i]   = d["lo"]   | 0.0f;
+                    }
+                    return true;
+                  });
+
+                  if (ok) {
+                    id(wx_status) = "";
+                  } else {
+                    id(wx_status) = "PARSE FAIL";
+                  }
+              - component.update: my_display
+
+# ============ DISPLAY ============
+display:
+  - platform: epaper_spi
+    id: my_display
+    model: Seeed-reTerminal-E1002
+    update_interval: never
+    lambda: |-
+      const auto BLACK  = Color(0,   0,   0,   0);
+      const auto WHITE  = Color(255, 255, 255, 0);
+      const auto RED    = Color(255, 0,   0,   0);
+      const auto YELLOW = Color(255, 255, 0,   0);
+      const auto GREEN  = Color(0,   255, 0,   0);
+      const auto BLUE   = Color(0,   0,   255, 0);
+
+      // ===== Avrundet groenn boks =====
+      auto rounded_box = [&](int x, int y, int w, int h, int r, Color c) {
+        it.filled_rectangle(x + r, y,     w - 2*r, h,         c);
+        it.filled_rectangle(x,     y + r, w,       h - 2*r,   c);
+        it.filled_circle(x + r,         y + r,         r, c);
+        it.filled_circle(x + w - r - 1, y + r,         r, c);
+        it.filled_circle(x + r,         y + h - r - 1, r, c);
+        it.filled_circle(x + w - r - 1, y + h - r - 1, r, c);
+      };
+
+      // ===== Ikon-tegner =====
+      auto draw_icon = [&](int cx, int cy, int s, const std::string &kind) {
+        if (kind == "sun") {
+          it.filled_circle(cx, cy, s, YELLOW);
+        } else if (kind == "cloud") {
+          it.filled_circle(cx - s/2, cy - s/4, s*2/3, WHITE);
+          it.filled_circle(cx + s/2, cy - s/3, s*3/4, WHITE);
+          it.filled_circle(cx,       cy + s/4, s,     WHITE);
+        } else if (kind == "partly") {
+          it.filled_circle(cx - s, cy - s/2, s*2/3, YELLOW);
+          it.filled_circle(cx - s/3, cy + s/6, s*2/3, WHITE);
+          it.filled_circle(cx + s/2, cy,       s*3/4, WHITE);
+          it.filled_circle(cx + s/6, cy + s/2, s,     WHITE);
+        } else if (kind == "rain") {
+          it.filled_circle(cx - s/2, cy - s/2, s*2/3, WHITE);
+          it.filled_circle(cx + s/2, cy - s/2, s*3/4, WHITE);
+          it.filled_circle(cx,       cy,       s,     WHITE);
+          for (int i = -1; i <= 1; i++) {
+            int dx = cx + i*s*2/3;
+            int dy = cy + s + 4;
+            it.filled_circle(dx, dy, 4, WHITE);
+            it.filled_circle(dx, dy, 3, BLUE);
+          }
+        }
+      };
+
+      it.fill(WHITE);
+
+      // ============ TOP ============
+      rounded_box(20, 14, 56, 56, 10, GREEN);
+      draw_icon(48, 42, 14, id(wx_icon));
+
+      it.printf(86, 14, id(f_med), BLACK,
+                "%s", id(wx_now).c_str());
+      it.printf(86, 54, id(f_mono_xs), BLACK,
+                "%s", id(wx_loc).c_str());
+
+      it.printf(760, 18, id(f_big), BLACK, TextAlign::TOP_RIGHT,
+                "%.1f", id(wx_temp));
+      it.printf(786, 18, id(f_big), RED, TextAlign::TOP_RIGHT, "°");
+      it.printf(786, 68, id(f_mono_sm), BLUE, TextAlign::TOP_RIGHT,
+                "luft %d%%", id(wx_hum));
+
+      it.filled_rectangle(20, 96, 760, 1, BLACK);
+
+      // ============ HOURLY ============
+      const int hx0   = 20;
+      const int hw    = (760 / 5);
+      const int hy_t  = 110;
+      const int hy_ic = 138;
+      const int hy_tp = 215;
+      const int ic_box = 44;
+
+      for (int i = 0; i < 5; i++) {
+        int cx = hx0 + hw * i + hw / 2;
+        it.printf(cx, hy_t, id(f_mono_sm), BLACK, TextAlign::TOP_CENTER,
+                  "%s", id(h_time)[i].c_str());
+
+        rounded_box(cx - ic_box/2, hy_ic, ic_box, ic_box, 8, GREEN);
+        draw_icon(cx, hy_ic + ic_box/2, 11, id(h_icon)[i]);
+
+        it.printf(cx, hy_tp, id(f_temp), BLACK, TextAlign::TOP_CENTER,
+                  "%.1f°", id(h_temp)[i]);
+      }
+
+      it.filled_rectangle(20, 252, 760, 1, BLACK);
+
+      // ============ DAILY ============
+      const int dx0   = 20;
+      const int dw    = (760 / 5);
+      const int dy_t  = 266;
+      const int dy_ic = 292;
+      const int dy_hi = 372;
+      const int dy_lo = 400;
+      const int dic_box = 50;
+
+      for (int i = 0; i < 5; i++) {
+        int cx = dx0 + dw * i + dw / 2;
+        it.printf(cx, dy_t, id(f_mono_sm), BLACK, TextAlign::TOP_CENTER,
+                  "%s", id(d_day)[i].c_str());
+
+        rounded_box(cx - dic_box/2, dy_ic, dic_box, dic_box, 9, GREEN);
+        draw_icon(cx, dy_ic + dic_box/2, 12, id(d_icon)[i]);
+
+        it.printf(cx, dy_hi, id(f_temp), BLACK, TextAlign::TOP_CENTER,
+                  "%.1f°", id(d_hi)[i]);
+        it.printf(cx, dy_lo, id(f_mono_sm), BLUE, TextAlign::TOP_CENTER,
+                  "%.1f°", id(d_lo)[i]);
+      }
+
+      // ============ FOOTER ============
+      it.filled_rectangle(20, 425, 760, 1, BLACK);
+
+      it.strftime(20, 432, id(f_mono_xs), BLACK, TextAlign::TOP_LEFT,
+                  "SIST OPPDATERT", id(ntp_time).now());
+      it.strftime(20, 450, id(f_temp), BLACK, TextAlign::TOP_LEFT,
+                  "%Y-%m-%d %H:%M", id(ntp_time).now());
+
+      if (!id(wx_status).empty()) {
+        it.printf(400, 432, id(f_mono_xs), RED, TextAlign::TOP_CENTER,
+                  "%s", id(wx_status).c_str());
+      }
+
+      auto ip_str = network::get_ip_addresses().empty()
+                    ? std::string("---")
+                    : network::get_ip_addresses()[0].str();
+      it.printf(786, 444, id(f_mono_xs), BLACK, TextAlign::TOP_RIGHT,
+                "IP %s", ip_str.c_str());
+
+      // BAT
+      it.printf(680, 460, id(f_mono_xs), BLACK, TextAlign::TOP_RIGHT,
+                "BAT %.0f%%", id(battery_pct).state);
+
+      // INNE fra JSON
+      it.printf(786, 460, id(f_mono_xs), BLACK, TextAlign::TOP_RIGHT,
+                "INNE %.1f C", id(wx_temp_in));
