@@ -1,0 +1,22 @@
+{
+  "wx_loc": "Aker brygge, Oslo",
+  "wx_now": "Skyet",
+  "wx_temp": 14.4,
+  "wx_hum": 54,
+  "wx_icon": "cloud",
+  "wx_temp_in": 25.3,
+  "hourly": [
+    {"t": "22:00", "icon": "cloud", "temp": 13.0},
+    {"t": "23:00", "icon": "cloud", "temp": 11.6},
+    {"t": "00:00", "icon": "cloud", "temp": 10.9},
+    {"t": "01:00", "icon": "cloud", "temp": 10.4},
+    {"t": "02:00", "icon": "cloud", "temp": 9.9}
+  ],
+  "daily": [
+    {"d": "i morgen", "icon": "cloud", "hi": 14.6, "lo": 7.2},
+    {"d": "torsdag", "icon": "rain", "hi": 8.1, "lo": 5.4},
+    {"d": "fredag", "icon": "cloud", "hi": 11.8, "lo": 7.8},
+    {"d": "l\u00f8rdag", "icon": "rain", "hi": 14.6, "lo": 7.2},
+    {"d": "s\u00f8ndag", "icon": "partly", "hi": 15.2, "lo": 8.8}
+  ]
+}
