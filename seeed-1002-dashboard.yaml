@@ -380,18 +380,30 @@ display:
 
       // ===== Ikon-tegner =====
       auto draw_icon = [&](int cx, int cy, int s, const std::string &kind) {
-        if (kind == "sun") {
+        if (kind == "sunny") {
+          // Sol - gul sirkel
           it.filled_circle(cx, cy, s, YELLOW);
+
+        } else if (kind == "night") {
+          // Natt - gul halvmaane
+          it.filled_circle(cx, cy, s, YELLOW);
+          it.filled_circle(cx + s/3, cy - s/4, s*4/5, WHITE);
+
         } else if (kind == "cloud") {
+          // Sky - tre hvite sirkler
           it.filled_circle(cx - s/2, cy - s/4, s*2/3, WHITE);
           it.filled_circle(cx + s/2, cy - s/3, s*3/4, WHITE);
           it.filled_circle(cx,       cy + s/4, s,     WHITE);
+
         } else if (kind == "partly") {
+          // Delvis skyet - sol bak sky
           it.filled_circle(cx - s, cy - s/2, s*2/3, YELLOW);
           it.filled_circle(cx - s/3, cy + s/6, s*2/3, WHITE);
           it.filled_circle(cx + s/2, cy,       s*3/4, WHITE);
           it.filled_circle(cx + s/6, cy + s/2, s,     WHITE);
+
         } else if (kind == "rain") {
+          // Regn - sky med blaa draaper
           it.filled_circle(cx - s/2, cy - s/2, s*2/3, WHITE);
           it.filled_circle(cx + s/2, cy - s/2, s*3/4, WHITE);
           it.filled_circle(cx,       cy,       s,     WHITE);
@@ -400,6 +412,18 @@ display:
             int dy = cy + s + 4;
             it.filled_circle(dx, dy, 4, WHITE);
             it.filled_circle(dx, dy, 3, BLUE);
+          }
+
+        } else if (kind == "snow") {
+          // Snoe - sky med blaa snoeflak (omvendt av regn)
+          it.filled_circle(cx - s/2, cy - s/2, s*2/3, WHITE);
+          it.filled_circle(cx + s/2, cy - s/2, s*3/4, WHITE);
+          it.filled_circle(cx,       cy,       s,     WHITE);
+          for (int i = -1; i <= 1; i++) {
+            int dx = cx + i*s*2/3;
+            int dy = cy + s + 4;
+            it.filled_circle(dx, dy, 4, BLUE);
+            it.filled_circle(dx, dy, 2, WHITE);
           }
         }
       };
