@@ -76,26 +76,40 @@ foreach ($df as $f) {
     $c++;
 }
 
-$out = "{\n";
-$out .= '  "wx_loc": ' . json_encode('Aker brygge, Oslo') . ",\n";
-$out .= '  "wx_now": ' . json_encode(wxNow($w['state'])) . ",\n";
-$out .= sprintf('  "wx_temp": %.1f', ftemp($a['temperature']??0)) . ",\n";
-$out .= '  "wx_hum": ' . (int)($a['humidity']??0) . ",\n";
-$out .= '  "wx_icon": ' . json_encode(mapIcon($w['state'])) . ",\n";
-if ($wx_temp_in !== null) {
-    $out .= sprintf('  "wx_temp_in": %.1f', $wx_temp_in) . ",\n";
-}
-$out .= "  \"hourly\": [\n";
-foreach ($ho as $i => $h) {
-    $c = $i < count($ho)-1 ? ',' : '';
-    $out .= sprintf('    {"t": %s, "icon": %s, "temp": %.1f}%s', json_encode($h['t']), json_encode($h['icon']), $h['temp'], $c) . "\n";
-}
-$out .= "  ],\n";
-$out .= "  \"daily\": [\n";
-foreach ($da as $i => $d) {
-    $c = $i < count($da)-1 ? ',' : '';
-    $out .= sprintf('    {"d": %s, "icon": %s, "hi": %.1f, "lo": %.1f}%s', json_encode($d['d']), json_encode($d['icon']), $d['hi'], $d['lo'], $c) . "\n";
-}
-$out .= "  ]\n}\n";
+$out = [
+    'wx_loc'       => 'Aker brygge, Oslo',
+    'wx_now'       => wxNow( $w['state'] ),
+    'wx_temp'      => round( ftemp( $a['temperature'] ?? 0 ), 1 ),
+    'wx_hum'       => ( int )( $a['humidity'] ?? 0 ),
+    'wx_icon'      => mapIcon( $w['state'] ),
+    'hourly'       => [],
+    'daily'        => [],
+];
 
-echo $out;
+if ( $wx_temp_in !== null ){
+    $out['wx_temp_in'] = round( $wx_temp_in, 1 );
+}
+
+foreach( $ho as $h ){
+    $out['hourly'][] = [
+        't'    => $h['t'],
+        'icon' => $h['icon'],
+        'temp' => round( $h['temp'], 1 ),
+    ];
+}
+
+foreach( $da as $d ){
+    $out['daily'][] = [
+        'd'    => $d['d'],
+        'icon' => $d['icon'],
+        'hi'   => round( $d['hi'], 1 ),
+        'lo'   => round( $d['lo'], 1 ),
+    ];
+}
+
+header( 'Content-Type: application/json; charset=utf-8' );
+
+echo json_encode(
+    $out,
+    JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION
+);
