@@ -107,8 +107,6 @@ foreach( $da as $d ){
     ];
 }
 
-header( 'Content-Type: application/json; charset=utf-8' );
-
 echo json_encode(
     $out,
     JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION
