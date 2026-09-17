@@ -6,11 +6,14 @@
   "wx_icon": "cloud",
   "wx_temp_in": 25.3,
   "hourly": [
-    {"t": "22:00", "icon": "cloud", "temp": 13.0},
-    {"t": "23:00", "icon": "cloud", "temp": 11.6},
-    {"t": "00:00", "icon": "cloud", "temp": 10.9},
-    {"t": "01:00", "icon": "cloud", "temp": 10.4},
-    {"t": "02:00", "icon": "cloud", "temp": 9.9}
+    {"t": "15:00", "icon": "partly", "temp": 14.4, "rain": 10},
+    {"t": "16:00", "icon": "cloud", "temp": 14.1, "rain": 20},
+    {"t": "17:00", "icon": "rain", "temp": 13.5, "rain": 45},
+    {"t": "18:00", "icon": "rain", "temp": 12.8, "rain": 60},
+    {"t": "19:00", "icon": "cloud", "temp": 12.3, "rain": 30},
+    {"t": "20:00", "icon": "cloud", "temp": 11.9, "rain": 15},
+    {"t": "21:00", "icon": "partly", "temp": 11.4, "rain": 10},
+    {"t": "22:00", "icon": "night", "temp": 10.9, "rain": 5}
   ],
   "daily": [
     {"d": "i morgen", "icon": "cloud", "hi": 14.6, "lo": 7.2},
@@ -18,5 +21,34 @@
     {"d": "fredag", "icon": "cloud", "hi": 11.8, "lo": 7.8},
     {"d": "l\u00f8rdag", "icon": "rain", "hi": 14.6, "lo": 7.2},
     {"d": "s\u00f8ndag", "icon": "partly", "hi": 15.2, "lo": 8.8}
+  ],
+  "market": {
+    "updated": "14:35",
+    "stocks": [
+      {"symbol": "EQNR", "price": 312.40, "change": 1.42, "spark": [306.2, 307.5, 307.0, 309.1, 308.7, 310.8, 310.4, 312.4]},
+      {"symbol": "DNB", "price": 241.10, "change": -0.38, "spark": [243.0, 242.7, 242.8, 242.2, 242.4, 241.8, 241.9, 241.1]},
+      {"symbol": "KOG", "price": 1682.00, "change": 2.10, "spark": [1647, 1653, 1650, 1661, 1658, 1668, 1675, 1682]},
+      {"symbol": "OSEBX", "price": 1482.60, "change": 0.61, "spark": [1473.6, 1476.1, 1475.4, 1477.0, 1479.2, 1478.1, 1482.9, 1482.6]}
+    ],
+    "fx": [
+      {"symbol": "EUR/NOK", "price": 11.6200, "change": 0.14, "spark": [11.58, 11.57, 11.59, 11.58, 11.61, 11.60, 11.61, 11.62]},
+      {"symbol": "USD/NOK", "price": 10.0700, "change": -0.22, "spark": [10.12, 10.11, 10.12, 10.10, 10.11, 10.09, 10.08, 10.07]}
+    ],
+    "commodities": [
+      {"symbol": "BRENT", "price": 78.42, "change": 0.80, "spark": [77.80, 77.95, 77.90, 78.10, 78.02, 78.25, 78.18, 78.42]},
+      {"symbol": "GULL", "price": 2631.00, "change": -0.20, "spark": [2637, 2639, 2636, 2637, 2634, 2635, 2632, 2631]},
+      {"symbol": "SØLV", "price": 31.18, "change": 1.10, "spark": [30.78, 30.82, 30.80, 30.95, 30.92, 31.02, 31.08, 31.18]}
+    ]
+  },
+  "cities": [
+    {"name": "LONDON", "temp": 18.0, "icon": "rain", "valid": true},
+    {"name": "MALAGA", "temp": 29.0, "icon": "sunny", "valid": true},
+    {"name": "CASCAIS", "temp": 24.0, "icon": "partly", "valid": true},
+    {"name": "MARILIA", "temp": 27.0, "icon": "sunny", "valid": true},
+    {"name": "FARSUND", "temp": 16.0, "icon": "cloud", "valid": true},
+    {"name": "TOKYO", "temp": 31.0, "icon": "rain", "valid": true},
+    {"name": "NEW YORK", "temp": 26.0, "icon": "partly", "valid": true},
+    {"name": "DOHA", "temp": 39.0, "icon": "sunny", "valid": true},
+    {"name": "MELBOURNE", "temp": 13.0, "icon": "fog", "valid": true}
   ]
 }

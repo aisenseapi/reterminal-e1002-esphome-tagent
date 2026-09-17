@@ -27,19 +27,22 @@ esphome:
 
 esp32:
   board: esp32-s3-devkitc-1
+  flash_size: 32MB
   framework:
     type: esp-idf
+    advanced:
+      enable_idf_experimental_features: true
 
 # ============ HA / OTA / WIFI ============
 api:
   encryption:
-    key: ""
+    key: !secret api_encryption_key
   # 15 min without HA contact = reboot.
   reboot_timeout: 15min
 
 ota:
   - platform: esphome
-    password: ""
+    password: !secret ota_password
 
 wifi:
   ssid: !secret wifi_ssid
@@ -183,13 +186,13 @@ font:
     id: f_mono_sm
     size: 14
     bpp: 1
-    glyphs: "ABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅabcdefghijklmnopqrstuvwxyzæøå0123456789.,:°%-+=/ "
+    glyphs: "ABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅabcdefghijklmnopqrstuvwxyzæøå0123456789.,:°%$-+=/ "
 
   - file: "gfonts://JetBrains+Mono@400"
     id: f_mono_xs
     size: 11
     bpp: 1
-    glyphs: "ABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅabcdefghijklmnopqrstuvwxyzæøå0123456789.,:°%-+=?/ "
+    glyphs: "ABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅabcdefghijklmnopqrstuvwxyzæøå0123456789.,:°%$-+=?/ "
 
 # ============ GLOBALS ============
 globals:
@@ -219,13 +222,20 @@ globals:
     initial_value: '0.0'
 
   - id: h_time
-    type: std::string[5]
+    type: std::string[8]
     restore_value: no
+  - id: hourly_count
+    type: int
+    restore_value: no
+    initial_value: '0'
   - id: h_icon
-    type: std::string[5]
+    type: std::string[8]
     restore_value: no
   - id: h_temp
-    type: float[5]
+    type: float[8]
+    restore_value: no
+  - id: h_rain
+    type: int[8]
     restore_value: no
 
   - id: d_day
@@ -246,6 +256,85 @@ globals:
     restore_value: no
     initial_value: '""'
 
+  # Compact market snapshot. The backend owns API keys and normalizes all
+  # providers into this fixed-size representation before the ESP32 sees it.
+  - id: market_updated
+    type: std::string
+    restore_value: no
+    initial_value: '"--:--"'
+  - id: market_count
+    type: int
+    restore_value: no
+    initial_value: '0'
+  - id: market_symbol
+    type: std::string[4]
+    restore_value: no
+  - id: market_price
+    type: float[4]
+    restore_value: no
+  - id: market_change
+    type: float[4]
+    restore_value: no
+  - id: market_spark_count
+    type: int[4]
+    restore_value: no
+  - id: market_spark
+    type: float[32]
+    restore_value: no
+
+  - id: fx_count
+    type: int
+    restore_value: no
+    initial_value: '0'
+  - id: fx_symbol
+    type: std::string[2]
+    restore_value: no
+  - id: fx_rate
+    type: float[2]
+    restore_value: no
+  - id: fx_change
+    type: float[2]
+    restore_value: no
+  - id: fx_spark_count
+    type: int[2]
+    restore_value: no
+  - id: fx_spark
+    type: float[16]
+    restore_value: no
+
+  - id: commodity_count
+    type: int
+    restore_value: no
+    initial_value: '0'
+  - id: commodity_symbol
+    type: std::string[3]
+    restore_value: no
+  - id: commodity_price
+    type: float[3]
+    restore_value: no
+  - id: commodity_change
+    type: float[3]
+    restore_value: no
+  - id: commodity_spark_count
+    type: int[3]
+    restore_value: no
+  - id: commodity_spark
+    type: float[24]
+    restore_value: no
+
+  - id: city_name
+    type: std::string[9]
+    restore_value: no
+  - id: city_temp
+    type: float[9]
+    restore_value: no
+  - id: city_icon
+    type: std::string[9]
+    restore_value: no
+  - id: city_valid
+    type: bool[9]
+    restore_value: no
+
   # Counts consecutive failed HTTP calls. 5 in a row = restart.
   - id: fail_count
     type: int
@@ -255,6 +344,13 @@ globals:
   # Indicates we have had at least one successful fetch.
   # The display only renders if this is true - so no "---" on boot.
   - id: data_ready
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+  # True only for the current successful HTTP/JSON cycle. This prevents a
+  # failed fetch from needlessly redrawing stale data on the slow E1002 panel.
+  - id: render_pending
     type: bool
     restore_value: no
     initial_value: 'false'
@@ -275,7 +371,9 @@ time:
 # ============ HTTP ============
 http_request:
   useragent: "esphome-reterminal"
-  timeout: 10s
+  # The local PHP endpoint also performs one batched HTTPS request for the
+  # world-city temperatures, so allow enough time for a cold network response.
+  timeout: 20s
   follow_redirects: true
 
 # ============ SCRIPTS ============
@@ -284,6 +382,7 @@ script:
     mode: single
     then:
       - light.turn_on: onboard_led
+      - lambda: 'id(render_pending) = false;'
       - http_request.get:
           url: "http://192.168.68.114/weather-eink.php"
           capture_response: true
@@ -306,12 +405,15 @@ script:
                     id(wx_temp_in) = root["wx_temp_in"] | 0.0f;
 
                     JsonArrayConst hr = root["hourly"];
-                    for (int i = 0; i < 5 && i < (int) hr.size(); i++) {
+                    int hourly_limit = std::min(8, (int) hr.size());
+                    for (int i = 0; i < hourly_limit; i++) {
                       JsonObjectConst h = hr[i];
                       id(h_time)[i] = h["t"]    | std::string("--");
                       id(h_icon)[i] = h["icon"] | std::string("cloud");
                       id(h_temp)[i] = h["temp"] | 0.0f;
+                      id(h_rain)[i] = h["rain"] | 0;
                     }
+                    id(hourly_count) = hourly_limit;
 
                     JsonArrayConst dy = root["daily"];
                     for (int i = 0; i < 5 && i < (int) dy.size(); i++) {
@@ -321,6 +423,82 @@ script:
                       id(d_hi)[i]   = d["hi"]   | 0.0f;
                       id(d_lo)[i]   = d["lo"]   | 0.0f;
                     }
+
+                    // Market data is optional. Empty arrays keep the weather
+                    // dashboard usable before a provider has been configured.
+                    id(market_count) = 0;
+                    id(fx_count) = 0;
+                    id(commodity_count) = 0;
+                    id(market_updated) = "--:--";
+                    JsonObjectConst market = root["market"];
+                    if (!market.isNull()) {
+                      id(market_updated) = market["updated"] | std::string("--:--");
+
+                      JsonArrayConst stocks = market["stocks"];
+                      int stock_limit = std::min(4, (int) stocks.size());
+                      for (int i = 0; i < stock_limit; i++) {
+                        JsonObjectConst row = stocks[i];
+                        id(market_symbol)[i] = row["symbol"] | std::string("---");
+                        id(market_price)[i] = row["price"] | 0.0f;
+                        id(market_change)[i] = row["change"] | 0.0f;
+                        id(market_spark_count)[i] = 0;
+
+                        JsonArrayConst spark = row["spark"];
+                        int spark_limit = std::min(8, (int) spark.size());
+                        for (int j = 0; j < spark_limit; j++) {
+                          id(market_spark)[i * 8 + j] = spark[j].as<float>();
+                        }
+                        id(market_spark_count)[i] = spark_limit;
+                      }
+                      id(market_count) = stock_limit;
+
+                      JsonArrayConst fx = market["fx"];
+                      int fx_limit = std::min(2, (int) fx.size());
+                      for (int i = 0; i < fx_limit; i++) {
+                        JsonObjectConst row = fx[i];
+                        id(fx_symbol)[i] = row["symbol"] | std::string("---");
+                        id(fx_rate)[i] = row["price"] | 0.0f;
+                        id(fx_change)[i] = row["change"] | 0.0f;
+                        id(fx_spark_count)[i] = 0;
+                        JsonArrayConst spark = row["spark"];
+                        int spark_limit = std::min(8, (int) spark.size());
+                        for (int j = 0; j < spark_limit; j++) {
+                          id(fx_spark)[i * 8 + j] = spark[j].as<float>();
+                        }
+                        id(fx_spark_count)[i] = spark_limit;
+                      }
+                      id(fx_count) = fx_limit;
+
+                      JsonArrayConst commodities = market["commodities"];
+                      int commodity_limit = std::min(3, (int) commodities.size());
+                      for (int i = 0; i < commodity_limit; i++) {
+                        JsonObjectConst row = commodities[i];
+                        id(commodity_symbol)[i] = row["symbol"] | std::string("---");
+                        id(commodity_price)[i] = row["price"] | 0.0f;
+                        id(commodity_change)[i] = row["change"] | 0.0f;
+                        id(commodity_spark_count)[i] = 0;
+                        JsonArrayConst spark = row["spark"];
+                        int spark_limit = std::min(8, (int) spark.size());
+                        for (int j = 0; j < spark_limit; j++) {
+                          id(commodity_spark)[i * 8 + j] = spark[j].as<float>();
+                        }
+                        id(commodity_spark_count)[i] = spark_limit;
+                      }
+                      id(commodity_count) = commodity_limit;
+                    }
+
+                    JsonArrayConst cities = root["cities"];
+                    for (int i = 0; i < 9; i++) {
+                      id(city_valid)[i] = false;
+                    }
+                    int city_limit = std::min(9, (int) cities.size());
+                    for (int i = 0; i < city_limit; i++) {
+                      JsonObjectConst city = cities[i];
+                      id(city_name)[i] = city["name"] | std::string("---");
+                      id(city_temp)[i] = city["temp"] | 0.0f;
+                      id(city_icon)[i] = city["icon"] | std::string("cloud");
+                      id(city_valid)[i] = city["valid"] | false;
+                    }
                     return true;
                   });
 
@@ -328,10 +506,11 @@ script:
                     id(wx_status) = "";
                     id(fail_count) = 0;
                     id(data_ready) = true;
+                    id(render_pending) = true;
                     // Store the fetch timestamp.
                     // If NTP time is invalid (shouldn't happen because of
                     // the on_boot wait), wx_last_update stays 0 and the
-                    // footer shows "----" instead of 1970.
+                    // status block shows "----" instead of 1970.
                     auto t = id(ntp_time).now();
                     if (t.is_valid()) {
                       id(wx_last_update) = t.timestamp;
@@ -350,7 +529,7 @@ script:
       # it stays as it was (or white on the very first boot).
       - if:
           condition:
-            lambda: 'return id(data_ready);'
+            lambda: 'return id(data_ready) && id(render_pending);'
           then:
             - component.update: my_display
       - light.turn_off: onboard_led
@@ -375,10 +554,13 @@ script:
       - light.turn_off: onboard_led
 
 # ============ INTERVAL ============
-# 600s = 10 min between fetches, 3h for scheduled restart.
+# The E1002 has no partial refresh and needs about 15-20 seconds for every
+# full redraw. Thirty minutes is a conservative default for panel life and
+# battery use; the green button can still request an immediate refresh.
+# The separate 3h restart remains a recovery measure.
 # startup_delay of 3h ensures the restart doesn't fire right after boot.
 interval:
-  - interval: 600s
+  - interval: 30min
     then:
       - script.execute: fetch_weather
 
@@ -412,107 +594,210 @@ display:
         it.filled_circle(x + w - r - 1, y + h - r - 1, r, c);
       };
 
-      // ===== Icon drawer =====
+      // Layered native-color primitives give the small icons a real outline,
+      // cloud depth, sun rays and distinct rain/storm/fog details. There is no
+      // antialiasing or simulated gray: every pixel maps to a Spectra 6 color.
+      auto draw_cloud = [&](int cx, int cy, int s) {
+        int base_y = cy + s / 3;
+        it.filled_circle(cx - s / 2, cy, s * 2 / 3 + 2, BLACK);
+        it.filled_circle(cx + s / 3, cy - s / 3, s * 5 / 6 + 2, BLACK);
+        it.filled_circle(cx + s, cy + s / 5, s * 3 / 5 + 2, BLACK);
+        it.filled_rectangle(cx - s - 1, base_y - 2, s * 2 + 2, s * 2 / 3 + 4, BLACK);
+
+        it.filled_circle(cx - s / 2, cy, s * 2 / 3, WHITE);
+        it.filled_circle(cx + s / 3, cy - s / 3, s * 5 / 6, WHITE);
+        it.filled_circle(cx + s, cy + s / 5, s * 3 / 5, WHITE);
+        it.filled_rectangle(cx - s + 1, base_y - 1, s * 2 - 1, s * 2 / 3 + 1, WHITE);
+      };
+
+      auto draw_sun = [&](int cx, int cy, int s) {
+        int ray = s + 4;
+        it.line(cx - ray, cy, cx - s - 1, cy, YELLOW);
+        it.line(cx + s + 1, cy, cx + ray, cy, YELLOW);
+        it.line(cx, cy - ray, cx, cy - s - 1, YELLOW);
+        it.line(cx, cy + s + 1, cx, cy + ray, YELLOW);
+        it.line(cx - ray + 2, cy - ray + 2, cx - s + 1, cy - s + 1, YELLOW);
+        it.line(cx + s - 1, cy + s - 1, cx + ray - 2, cy + ray - 2, YELLOW);
+        it.line(cx + s - 1, cy - s + 1, cx + ray - 2, cy - ray + 2, YELLOW);
+        it.line(cx - ray + 2, cy + ray - 2, cx - s + 1, cy + s - 1, YELLOW);
+        it.filled_circle(cx, cy, s + 1, BLACK);
+        it.filled_circle(cx, cy, s - 1, YELLOW);
+      };
+
       auto draw_icon = [&](int cx, int cy, int s, const std::string &kind) {
         if (kind == "sunny") {
-          it.filled_circle(cx, cy, s, YELLOW);
+          draw_sun(cx, cy, s);
 
         } else if (kind == "night") {
-          it.filled_circle(cx, cy, s, YELLOW);
-          it.filled_circle(cx + s/3, cy - s/4, s*4/5, WHITE);
-
-        } else if (kind == "cloud") {
-          it.filled_circle(cx - s/2, cy - s/4, s*2/3, WHITE);
-          it.filled_circle(cx + s/2, cy - s/3, s*3/4, WHITE);
-          it.filled_circle(cx,       cy + s/4, s,     WHITE);
+          it.filled_circle(cx, cy, s + 1, BLACK);
+          it.filled_circle(cx, cy, s - 1, YELLOW);
+          it.filled_circle(cx + s / 2, cy - s / 3, s - 2, GREEN);
 
         } else if (kind == "partly") {
-          it.filled_circle(cx - s, cy - s/2, s*2/3, YELLOW);
-          it.filled_circle(cx - s/3, cy + s/6, s*2/3, WHITE);
-          it.filled_circle(cx + s/2, cy,       s*3/4, WHITE);
-          it.filled_circle(cx + s/6, cy + s/2, s,     WHITE);
+          draw_sun(cx - s, cy - s / 2, s * 2 / 3);
+          draw_cloud(cx, cy + s / 3, s);
 
         } else if (kind == "rain") {
-          it.filled_circle(cx - s/2, cy - s/2, s*2/3, WHITE);
-          it.filled_circle(cx + s/2, cy - s/2, s*3/4, WHITE);
-          it.filled_circle(cx,       cy,       s,     WHITE);
+          draw_cloud(cx, cy - s / 3, s);
           for (int i = -1; i <= 1; i++) {
-            int dx = cx + i*s*2/3;
-            int dy = cy + s + 4;
-            it.filled_circle(dx, dy, 4, WHITE);
-            it.filled_circle(dx, dy, 3, BLUE);
+            int drop_x = cx + i * s * 2 / 3;
+            int drop_y = cy + s + 2 + (i == 0 ? 2 : 0);
+            it.line(drop_x + 2, drop_y - 4, drop_x - 1, drop_y + 2, BLUE);
+            it.line(drop_x + 3, drop_y - 4, drop_x, drop_y + 2, BLUE);
+            it.filled_circle(drop_x, drop_y + 2, 2, BLUE);
           }
 
+        } else if (kind == "storm") {
+          draw_cloud(cx, cy - s / 3, s);
+          int bolt_x = cx + 2;
+          int bolt_y = cy + s / 2;
+          it.line(bolt_x + 4, bolt_y, bolt_x - 2, bolt_y + 8, YELLOW);
+          it.line(bolt_x - 2, bolt_y + 8, bolt_x + 3, bolt_y + 8, YELLOW);
+          it.line(bolt_x + 3, bolt_y + 8, bolt_x - 4, bolt_y + 17, YELLOW);
+          it.line(bolt_x + 5, bolt_y, bolt_x - 1, bolt_y + 8, YELLOW);
+
+        } else if (kind == "fog") {
+          draw_cloud(cx, cy - s / 2, s);
+          it.line(cx - s, cy + s, cx + s, cy + s, BLUE);
+          it.line(cx - s / 2, cy + s + 5, cx + s + 3, cy + s + 5, BLUE);
+
+        } else if (kind == "wind") {
+          draw_cloud(cx, cy - s / 2, s);
+          it.line(cx - s, cy + s, cx + s, cy + s, BLUE);
+          it.line(cx - s / 2, cy + s + 5, cx + s + 4, cy + s + 5, BLUE);
+          it.filled_circle(cx + s + 4, cy + s + 2, 3, BLUE);
+          it.filled_circle(cx + s + 4, cy + s + 2, 2, GREEN);
+
         } else if (kind == "snow") {
-          it.filled_circle(cx - s/2, cy - s/2, s*2/3, WHITE);
-          it.filled_circle(cx + s/2, cy - s/2, s*3/4, WHITE);
-          it.filled_circle(cx,       cy,       s,     WHITE);
+          draw_cloud(cx, cy - s / 3, s);
           for (int i = -1; i <= 1; i++) {
-            int dx = cx + i*s*2/3;
-            int dy = cy + s + 4;
-            it.filled_circle(dx, dy, 4, BLUE);
-            it.filled_circle(dx, dy, 2, WHITE);
+            int snow_x = cx + i * s * 2 / 3;
+            int snow_y = cy + s + 3;
+            it.line(snow_x - 3, snow_y, snow_x + 3, snow_y, BLUE);
+            it.line(snow_x, snow_y - 3, snow_x, snow_y + 3, BLUE);
           }
+
+        } else {
+          draw_cloud(cx, cy, s);
+        }
+      };
+
+      // Eight-point market sparklines. The E1002 has no gray shades or
+      // partial refresh, so the chart uses a solid native color and a
+      // two-pixel stroke instead of grids, fills, or animation.
+      auto draw_spark = [&](int x, int y, int w, int h,
+                            const float *values, int count, Color c) {
+        if (count < 2) return;
+
+        float min_value = values[0];
+        float max_value = min_value;
+        for (int i = 1; i < count; i++) {
+          float value = values[i];
+          if (value < min_value) min_value = value;
+          if (value > max_value) max_value = value;
+        }
+        float range = max_value - min_value;
+        if (range < 0.001f) range = 1.0f;
+
+        int previous_x = x;
+        int previous_y = y + h - 1 - (int) ((values[0] - min_value) * (h - 2) / range);
+        for (int i = 1; i < count; i++) {
+          int point_x = x + i * (w - 1) / (count - 1);
+          int point_y = y + h - 1 - (int) ((values[i] - min_value) * (h - 2) / range);
+          it.line(previous_x, previous_y, point_x, point_y, c);
+          it.line(previous_x, previous_y + 1, point_x, point_y + 1, c);
+          previous_x = point_x;
+          previous_y = point_y;
         }
       };
 
       it.fill(WHITE);
 
-      // ============ TOP ============
-      rounded_box(20, 14, 56, 56, 10, GREEN);
-      draw_icon(48, 42, 14, id(wx_icon));
+      // Two persistent columns keep all information visible on one page.
+      // The one-pixel divider and large white fields are reliable on the
+      // Spectra 6 panel and avoid simulated gray surfaces.
+      it.filled_rectangle(452, 0, 1, 400, BLACK);
+      it.filled_rectangle(0, 400, 800, 1, BLACK);
 
-      it.printf(86, 14, id(f_med), BLACK,
+      // ============ CURRENT WEATHER ============
+      rounded_box(16, 14, 52, 52, 10, GREEN);
+      draw_icon(42, 40, 13, id(wx_icon));
+
+      it.printf(78, 14, id(f_med), BLACK,
                 "%s", id(wx_now).c_str());
-      it.printf(86, 54, id(f_mono_xs), BLACK,
+      it.printf(78, 52, id(f_mono_xs), BLACK,
                 "%s", id(wx_loc).c_str());
 
-      it.printf(760, 18, id(f_big), BLACK, TextAlign::TOP_RIGHT,
+      it.printf(438, 10, id(f_big), BLACK, TextAlign::TOP_RIGHT,
                 "%.1f", id(wx_temp));
-      it.printf(786, 18, id(f_big), RED, TextAlign::TOP_RIGHT, "°");
-      it.printf(786, 68, id(f_mono_sm), BLUE, TextAlign::TOP_RIGHT,
-                "luft %d%%", id(wx_hum));
+      it.printf(451, 10, id(f_big), RED, TextAlign::TOP_RIGHT, "°");
+      it.printf(438, 68, id(f_mono_xs), BLUE, TextAlign::TOP_RIGHT,
+                "LUFT %d%%  INNE %.1f°", id(wx_hum), id(wx_temp_in));
 
-      it.filled_rectangle(20, 96, 760, 1, BLACK);
+      it.filled_rectangle(16, 88, 422, 1, BLACK);
 
-      // ============ HOURLY ============
-      const int hx0   = 20;
-      const int hw    = (760 / 5);
-      const int hy_t  = 110;
-      const int hy_ic = 138;
-      const int hy_tp = 215;
-      const int ic_box = 44;
+      // ============ EIGHT-HOUR WEATHER GRAPH ============
+      it.printf(16, 99, id(f_mono_sm), BLACK, "NESTE 8 TIMER");
+      it.printf(438, 101, id(f_mono_xs), BLUE, TextAlign::TOP_RIGHT,
+                "TEMP / REGN");
 
-      for (int i = 0; i < 5; i++) {
-        int cx = hx0 + hw * i + hw / 2;
-        it.printf(cx, hy_t, id(f_mono_sm), BLACK, TextAlign::TOP_CENTER,
-                  "%s", id(h_time)[i].c_str());
+      const int chart_x = 22;
+      const int chart_y = 132;
+      const int chart_w = 410;
+      const int chart_h = 48;
+      const int rain_base = 202;
+      int hourly_points = id(hourly_count);
 
-        rounded_box(cx - ic_box/2, hy_ic, ic_box, ic_box, 8, GREEN);
-        draw_icon(cx, hy_ic + ic_box/2, 11, id(h_icon)[i]);
+      if (hourly_points >= 2) {
+        float temp_min = id(h_temp)[0];
+        float temp_max = temp_min;
+        for (int i = 1; i < hourly_points; i++) {
+          if (id(h_temp)[i] < temp_min) temp_min = id(h_temp)[i];
+          if (id(h_temp)[i] > temp_max) temp_max = id(h_temp)[i];
+        }
+        float temp_range = temp_max - temp_min;
+        if (temp_range < 1.0f) temp_range = 1.0f;
 
-        it.printf(cx, hy_tp, id(f_temp), BLACK, TextAlign::TOP_CENTER,
-                  "%.1f°", id(h_temp)[i]);
+        for (int i = 0; i < hourly_points; i++) {
+          int point_x = chart_x + i * chart_w / (hourly_points - 1);
+          int rain_height = id(h_rain)[i] * 28 / 100;
+          if (rain_height < 2 && id(h_rain)[i] > 0) rain_height = 2;
+          it.filled_rectangle(point_x - 3, rain_base - rain_height,
+                              6, rain_height, BLUE);
+
+          if (i % 2 == 0 || i == hourly_points - 1) {
+            int point_y = chart_y + chart_h - 1
+                          - (int) ((id(h_temp)[i] - temp_min)
+                                   * (chart_h - 2) / temp_range);
+            it.printf(point_x, point_y - 13, id(f_mono_xs), BLACK,
+                      TextAlign::TOP_CENTER, "%.0f°", id(h_temp)[i]);
+          }
+          it.printf(point_x, 211, id(f_mono_xs), BLACK,
+                    TextAlign::TOP_CENTER, "%s", id(h_time)[i].c_str());
+        }
+        draw_spark(chart_x, chart_y, chart_w, chart_h,
+                   id(h_temp), hourly_points, RED);
       }
 
-      it.filled_rectangle(20, 252, 760, 1, BLACK);
+      it.filled_rectangle(16, 232, 422, 1, BLACK);
 
       // ============ DAILY ============
-      const int dx0   = 20;
-      const int dw    = (760 / 5);
-      const int dy_t  = 266;
-      const int dy_ic = 292;
-      const int dy_hi = 372;
-      const int dy_lo = 400;
-      const int dic_box = 50;
+      it.printf(16, 242, id(f_mono_sm), BLACK, "FEM DAGER");
+      const int dx0 = 16;
+      const int dw = 422 / 5;
+      const int dy_t = 265;
+      const int dy_ic = 284;
+      const int dy_hi = 340;
+      const int dy_lo = 369;
+      const int dic_box = 42;
 
       for (int i = 0; i < 5; i++) {
         int cx = dx0 + dw * i + dw / 2;
-        it.printf(cx, dy_t, id(f_mono_sm), BLACK, TextAlign::TOP_CENTER,
+        it.printf(cx, dy_t, id(f_mono_xs), BLACK, TextAlign::TOP_CENTER,
                   "%s", id(d_day)[i].c_str());
 
         rounded_box(cx - dic_box/2, dy_ic, dic_box, dic_box, 9, GREEN);
-        draw_icon(cx, dy_ic + dic_box/2, 12, id(d_icon)[i]);
+        draw_icon(cx, dy_ic + dic_box/2, 9, id(d_icon)[i]);
 
         it.printf(cx, dy_hi, id(f_temp), BLACK, TextAlign::TOP_CENTER,
                   "%.1f°", id(d_hi)[i]);
@@ -520,35 +805,109 @@ display:
                   "%.1f°", id(d_lo)[i]);
       }
 
-      // ============ FOOTER ============
-      it.filled_rectangle(20, 425, 760, 1, BLACK);
+      // ============ MARKET COLUMN ============
+      const int mx = 466;
+      it.printf(mx, 14, id(f_mono_sm), BLACK, "MARKEDER");
+      it.printf(786, 16, id(f_mono_xs), BLACK, TextAlign::TOP_RIGHT,
+                "DATA %s", id(market_updated).c_str());
 
-      it.printf(20, 432, id(f_mono_xs), BLACK, TextAlign::TOP_LEFT,
-                "SIST OPPDATERT");
-
-      // Shows the fetch timestamp, not the render timestamp.
-      // If wx_last_update is 0 (no successful fetch yet), show "----".
-      if (id(wx_last_update) > 0) {
-        ESPTime t = ESPTime::from_epoch_local(id(wx_last_update));
-        it.strftime(20, 450, id(f_temp), BLACK, TextAlign::TOP_LEFT,
-                    "%Y-%m-%d %H:%M", t);
-      } else {
-        it.printf(20, 450, id(f_temp), BLACK, TextAlign::TOP_LEFT, "----");
+      for (int i = 0; i < id(market_count); i++) {
+        int y = 36 + i * 27;
+        Color change_color = id(market_change)[i] > 0.0f ? GREEN
+                             : (id(market_change)[i] < 0.0f ? RED : BLACK);
+        it.printf(mx, y, id(f_mono_sm), BLACK, "%s", id(market_symbol)[i].c_str());
+        it.printf(612, y, id(f_mono_sm), BLACK, TextAlign::TOP_RIGHT,
+                  "%.2f", id(market_price)[i]);
+        it.printf(700, y, id(f_mono_sm), change_color, TextAlign::TOP_RIGHT,
+                  "%+.2f%%", id(market_change)[i]);
+        draw_spark(715, y - 2, 69, 22,
+                   id(market_spark) + i * 8,
+                   id(market_spark_count)[i], change_color);
       }
 
+      if (id(market_count) == 0 && id(fx_count) == 0 && id(commodity_count) == 0) {
+        it.printf(626, 65, id(f_mono_sm), RED, TextAlign::TOP_CENTER,
+                  "INGEN MARKEDSDATA");
+      }
+
+      it.filled_rectangle(mx, 145, 320, 1, BLACK);
+      it.printf(mx, 154, id(f_mono_sm), BLACK, "VALUTA");
+      for (int i = 0; i < id(fx_count); i++) {
+        int y = 177 + i * 27;
+        Color change_color = id(fx_change)[i] > 0.0f ? GREEN
+                             : (id(fx_change)[i] < 0.0f ? RED : BLACK);
+        it.printf(mx, y, id(f_mono_sm), BLACK, "%s", id(fx_symbol)[i].c_str());
+        it.printf(612, y, id(f_mono_sm), BLACK, TextAlign::TOP_RIGHT,
+                  "%.4f", id(fx_rate)[i]);
+        it.printf(700, y, id(f_mono_sm), change_color, TextAlign::TOP_RIGHT,
+                  "%+.2f%%", id(fx_change)[i]);
+        draw_spark(715, y - 2, 69, 22,
+                   id(fx_spark) + i * 8,
+                   id(fx_spark_count)[i], change_color);
+      }
+
+      it.filled_rectangle(mx, 230, 320, 1, BLACK);
+      it.printf(mx, 239, id(f_mono_sm), BLACK, "RÅVARER");
+      for (int i = 0; i < id(commodity_count); i++) {
+        int y = 262 + i * 27;
+        Color change_color = id(commodity_change)[i] > 0.0f ? GREEN
+                             : (id(commodity_change)[i] < 0.0f ? RED : BLACK);
+        it.printf(mx, y, id(f_mono_sm), BLACK, "%s", id(commodity_symbol)[i].c_str());
+        it.printf(612, y, id(f_mono_sm), BLACK, TextAlign::TOP_RIGHT,
+                  "$%.2f", id(commodity_price)[i]);
+        it.printf(700, y, id(f_mono_sm), change_color, TextAlign::TOP_RIGHT,
+                  "%+.2f%%", id(commodity_change)[i]);
+        draw_spark(715, y - 2, 69, 22,
+                   id(commodity_spark) + i * 8,
+                   id(commodity_spark_count)[i], change_color);
+      }
+
+      // Compact three-line technical block: deliberately no full-width footer.
+      it.filled_rectangle(mx, 341, 320, 1, BLACK);
+      it.printf(mx, 350, id(f_mono_xs), BLACK, "WX OPEN-METEO.COM");
+      if (id(wx_last_update) > 0) {
+        ESPTime t = ESPTime::from_epoch_local(id(wx_last_update));
+        it.strftime(786, 350, id(f_mono_xs), BLACK, TextAlign::TOP_RIGHT,
+                    "OPPD %H:%M", t);
+      } else {
+        it.printf(786, 350, id(f_mono_xs), BLACK, TextAlign::TOP_RIGHT,
+                  "OPPD --:--");
+      }
+
+      char ip_str[network::IP_ADDRESS_BUFFER_SIZE] = "---";
+      auto ip_addresses = network::get_ip_addresses();
+      if (ip_addresses[0].is_set()) {
+        ip_addresses[0].str_to(ip_str);
+      }
+      it.printf(786, 368, id(f_mono_xs), BLACK, TextAlign::TOP_RIGHT,
+                "IP %s", ip_str);
+      it.printf(786, 386, id(f_mono_xs), BLUE, TextAlign::TOP_RIGHT,
+                "BAT %.0f%%", id(battery_pct).state);
+
       if (!id(wx_status).empty()) {
-        it.printf(400, 432, id(f_mono_xs), RED, TextAlign::TOP_CENTER,
+        it.printf(mx, 386, id(f_mono_xs), RED, TextAlign::TOP_LEFT,
                   "%s", id(wx_status).c_str());
       }
 
-      auto ip_str = network::get_ip_addresses().empty()
-                    ? std::string("---")
-                    : network::get_ip_addresses()[0].str();
-      it.printf(786, 444, id(f_mono_xs), BLACK, TextAlign::TOP_RIGHT,
-                "IP %s", ip_str.c_str());
+      // ============ WORLD CITIES ============
+      // Nine equal cells span the full width. A 22px native-color icon plus a
+      // large temperature remains legible without stealing space above.
+      const int city_x0 = 8;
+      const int city_w = 784 / 9;
+      for (int i = 0; i < 9; i++) {
+        int cx = city_x0 + city_w * i + city_w / 2;
+        if (i > 0) {
+          it.filled_rectangle(city_x0 + city_w * i, 407, 1, 65, BLACK);
+        }
+        it.printf(cx, 409, id(f_mono_xs), BLACK, TextAlign::TOP_CENTER,
+                  "%s", id(city_name)[i].c_str());
 
-      it.printf(680, 460, id(f_mono_xs), BLACK, TextAlign::TOP_RIGHT,
-                "BAT %.0f%%", id(battery_pct).state);
-
-      it.printf(786, 460, id(f_mono_xs), BLACK, TextAlign::TOP_RIGHT,
-                "INNE %.1f C", id(wx_temp_in));
+        rounded_box(cx - 29, 432, 22, 22, 5, GREEN);
+        draw_icon(cx - 18, 443, 4, id(city_icon)[i]);
+        if (id(city_valid)[i]) {
+          it.printf(cx + 2, 429, id(f_temp), BLACK, TextAlign::TOP_LEFT,
+                    "%.0f°", id(city_temp)[i]);
+        } else {
+          it.printf(cx + 2, 429, id(f_temp), RED, TextAlign::TOP_LEFT, "--");
+        }
+      }
