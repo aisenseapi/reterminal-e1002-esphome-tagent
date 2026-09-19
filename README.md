@@ -25,10 +25,12 @@ firmware rather than by the page.
 
 Viewing it needs nothing but a browser:
 
-- <https://htmlpreview.github.io/?https://github.com/aisenseapi/reterminal-e1002-esphome-tagent/blob/main/docs/index.html>
-- Turning on GitHub Pages (Settings -> Pages -> branch `main`, folder `/docs`) serves the same page
-  from <https://aisenseapi.github.io/reterminal-e1002-esphome-tagent/> without a third-party proxy,
-  which is the better link to hand out.
+<https://htmlpreview.github.io/?https://github.com/aisenseapi/reterminal-e1002-esphome-tagent/blob/main/docs/index.html>
+
+GitHub Pages is not enabled on this repository, so
+<https://aisenseapi.github.io/reterminal-e1002-esphome-tagent/> returns 404 today. Turning it on
+under Settings -> Pages, serving branch `main` from the `/docs` folder, would publish the same page
+at that address without a third-party proxy, and that is the better link to hand out.
 
 The panel colors in the preview are an estimate of how the pigments read in room light rather than
 measured values, and text can sit a pixel or two off, because the browser and ESPHome derive font
