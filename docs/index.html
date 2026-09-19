@@ -1,0 +1,962 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="Pixel-accurate rendering of the reTerminal E1002 ESPHome dashboard, drawn from the display lambda in seeed-1002-dashboard.yaml onto the panel's six native Spectra 6 colours.">
+<title>E1002 Panelvisning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+  :root{
+    --ground:#e9e7e0;
+    --surface:#f7f6f2;
+    --surface-2:#edebe4;
+    --ink:#1c1e1a;
+    --ink-2:#5e625a;
+    --ink-3:#8a8e85;
+    --rule:#d3d0c6;
+    --accent:#4e6b3b;
+    --accent-soft:#e2e8d8;
+    --alert:#9c3a31;
+    --bezel:#d7d4cc;
+    --bezel-edge:#b6b2a8;
+    --shadow:rgba(38,40,34,.16);
+    --zoom:1;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#14161a;
+      --surface:#1c1f23;
+      --surface-2:#23272c;
+      --ink:#e7e9e4;
+      --ink-2:#9aa098;
+      --ink-3:#6e746c;
+      --rule:#2f343a;
+      --accent:#86a85f;
+      --accent-soft:#232c1e;
+      --alert:#c96a5e;
+      --bezel:#2a2e34;
+      --bezel-edge:#171a1e;
+      --shadow:rgba(0,0,0,.45);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#14161a;
+    --surface:#1c1f23;
+    --surface-2:#23272c;
+    --ink:#e7e9e4;
+    --ink-2:#9aa098;
+    --ink-3:#6e746c;
+    --rule:#2f343a;
+    --accent:#86a85f;
+    --accent-soft:#232c1e;
+    --alert:#c96a5e;
+    --bezel:#2a2e34;
+    --bezel-edge:#171a1e;
+    --shadow:rgba(0,0,0,.45);
+  }
+
+  body{
+    background:var(--ground);
+    color:var(--ink);
+    font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    font-size:15px;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{
+    max-width:1000px;
+    margin:0 auto;
+    padding-inline:20px;
+    padding-block:34px 56px;
+    display:flex;
+    flex-direction:column;
+    gap:30px;
+  }
+
+  /* ---- header ---- */
+  .eyebrow{
+    font-family:"JetBrains Mono",ui-monospace,monospace;
+    font-size:11px;
+    font-weight:500;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--accent);
+    margin:0 0 10px;
+  }
+  h1{
+    font-family:"JetBrains Mono",ui-monospace,monospace;
+    font-weight:700;
+    font-size:clamp(26px,4.4vw,38px);
+    letter-spacing:-.02em;
+    line-height:1.12;
+    margin:0 0 12px;
+    text-wrap:balance;
+  }
+  .lede{
+    margin:0;
+    max-width:62ch;
+    color:var(--ink-2);
+    font-size:16px;
+  }
+  .specs{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px 20px;
+    margin:18px 0 0;
+    padding:0;
+    list-style:none;
+    font-family:"JetBrains Mono",ui-monospace,monospace;
+    font-size:11.5px;
+    letter-spacing:.06em;
+    color:var(--ink-3);
+    text-transform:uppercase;
+  }
+  .specs b{color:var(--ink);font-weight:500;}
+
+  /* ---- controls ---- */
+  .controls{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:10px 18px;
+    padding:14px 16px;
+    background:var(--surface);
+    border:1px solid var(--rule);
+    border-radius:4px;
+  }
+  .ctl{display:flex;align-items:center;gap:9px;}
+  .ctl-label{
+    font-family:"JetBrains Mono",ui-monospace,monospace;
+    font-size:10.5px;
+    letter-spacing:.13em;
+    text-transform:uppercase;
+    color:var(--ink-3);
+  }
+  .seg{display:flex;border:1px solid var(--rule);border-radius:3px;overflow:hidden;}
+  .seg button{
+    appearance:none;
+    border:0;
+    background:transparent;
+    color:var(--ink-2);
+    font-family:"JetBrains Mono",ui-monospace,monospace;
+    font-size:12px;
+    padding:6px 12px;
+    cursor:pointer;
+    border-right:1px solid var(--rule);
+  }
+  .seg button:last-child{border-right:0;}
+  .seg button[aria-pressed="true"]{background:var(--accent);color:#f7f6f2;}
+  :root[data-theme="dark"] .seg button[aria-pressed="true"],
+  .seg button[aria-pressed="true"]{color:#f7f6f2;}
+  .seg button:hover:not([aria-pressed="true"]){background:var(--surface-2);color:var(--ink);}
+  .btn{
+    appearance:none;
+    border:1px solid var(--rule);
+    background:var(--surface-2);
+    color:var(--ink);
+    font-family:"JetBrains Mono",ui-monospace,monospace;
+    font-size:12px;
+    padding:7px 14px;
+    border-radius:3px;
+    cursor:pointer;
+  }
+  .btn:hover{border-color:var(--accent);color:var(--accent);}
+  .btn[disabled]{opacity:.45;cursor:default;border-color:var(--rule);color:var(--ink-3);}
+  .controls :is(button,input):focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .switch{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--ink-2);}
+  .switch input{accent-color:var(--accent);width:15px;height:15px;cursor:pointer;}
+
+  /* ---- device ---- */
+  .viewport{
+    overflow-x:auto;
+    padding-bottom:4px;
+  }
+  .device{
+    width:calc(800px * var(--zoom) + 44px);
+    max-width:100%;
+    box-sizing:border-box;
+    margin:0 auto;
+    padding:22px;
+    background:linear-gradient(170deg,var(--bezel),var(--bezel-edge));
+    border-radius:12px;
+    box-shadow:0 18px 44px -20px var(--shadow), 0 1px 0 rgba(255,255,255,.5) inset;
+  }
+  .panel{
+    position:relative;
+    width:100%;
+    aspect-ratio:800/480;
+    box-shadow:0 0 0 1px rgba(0,0,0,.28), 0 2px 10px rgba(0,0,0,.22) inset;
+    isolation:isolate;
+  }
+  /* 1x fits the reader's window; 2x is for pixel inspection and may scroll. */
+  .viewport[data-zoom="2"] .device{max-width:none;}
+  .panel canvas{
+    display:block;
+    width:100%;
+    height:100%;
+    image-rendering:pixelated;
+  }
+  .panel .layer{position:absolute;inset:0;pointer-events:none;}
+  .grain{opacity:.14;mix-blend-mode:multiply;background-repeat:repeat;background-size:96px 96px;}
+  .glare{
+    background:
+      linear-gradient(104deg, rgba(255,255,255,.30) 0%, rgba(255,255,255,.04) 26%, rgba(255,255,255,0) 48%),
+      radial-gradient(120% 85% at 92% 106%, rgba(20,24,16,.16), rgba(0,0,0,0) 58%);
+    mix-blend-mode:soft-light;
+  }
+  .flash{background:#fff;opacity:0;}
+  .panel[data-plain="1"] .grain,.panel[data-plain="1"] .glare{display:none;}
+  .device[data-plain="1"]{background:var(--surface-2);box-shadow:0 0 0 1px var(--rule);}
+
+  .caption{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:space-between;
+    gap:6px 20px;
+    margin:14px auto 0;
+    max-width:900px;
+    font-family:"JetBrains Mono",ui-monospace,monospace;
+    font-size:11px;
+    letter-spacing:.05em;
+    color:var(--ink-3);
+    text-transform:uppercase;
+  }
+
+  /* ---- palette ---- */
+  h2{
+    font-family:"JetBrains Mono",ui-monospace,monospace;
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--ink);
+    margin:0 0 4px;
+    padding-bottom:10px;
+    border-bottom:1px solid var(--rule);
+  }
+  .section{display:flex;flex-direction:column;gap:16px;}
+  .swatches{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(138px,1fr));
+    gap:1px;
+    background:var(--rule);
+    border:1px solid var(--rule);
+  }
+  .sw{background:var(--surface);padding:0 0 12px;display:flex;flex-direction:column;gap:9px;}
+  .sw-chip{height:52px;border-bottom:1px solid var(--rule);}
+  .sw-body{padding:0 12px;display:flex;flex-direction:column;gap:3px;}
+  .sw-name{
+    font-family:"JetBrains Mono",ui-monospace,monospace;
+    font-size:11px;letter-spacing:.11em;text-transform:uppercase;font-weight:500;
+  }
+  .sw-hex{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11px;color:var(--ink-3);}
+  .sw-use{font-size:12.5px;color:var(--ink-2);line-height:1.4;}
+
+  /* ---- notes ---- */
+  .notes{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:22px;
+  }
+  .note h3{
+    font-family:"JetBrains Mono",ui-monospace,monospace;
+    font-size:11px;font-weight:500;letter-spacing:.13em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 10px;
+  }
+  .note ul{margin:0;padding-left:17px;display:flex;flex-direction:column;gap:7px;}
+  .note li{font-size:13.5px;color:var(--ink-2);line-height:1.5;}
+  .note li b{color:var(--ink);font-weight:600;}
+  code{
+    font-family:"JetBrains Mono",ui-monospace,monospace;
+    font-size:12px;
+    background:var(--surface-2);
+    padding:1px 5px;
+    border-radius:2px;
+    color:var(--ink);
+  }
+  .callout{
+    border-left:2px solid var(--accent);
+    background:var(--accent-soft);
+    padding:14px 16px;
+    font-size:13.5px;
+    color:var(--ink-2);
+  }
+  .callout b{color:var(--ink);}
+  footer{
+    border-top:1px solid var(--rule);
+    padding-top:16px;
+    font-family:"JetBrains Mono",ui-monospace,monospace;
+    font-size:11px;
+    letter-spacing:.05em;
+    color:var(--ink-3);
+    text-transform:uppercase;
+  }
+  @media (prefers-reduced-motion:reduce){
+    .flash{transition:none!important;}
+  }
+</style>
+<style>
+  html{-webkit-text-size-adjust:100%;}
+  body{margin:0;}
+  img{max-width:100%;}
+  [hidden]{display:none!important;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">reTerminal E1002 &#xB7; seeed-1002-dashboard.yaml</p>
+    <h1>E1002 Panelvisning</h1>
+    <p class="lede">Hele tegne-lambdaen fra ESPHome-konfigurasjonen er portet til denne siden &#x2014; samme koordinater, samme tegneprimitiver og samme seks panelfarger. Bildet under er ikke en skisse av layouten; det er layouten, regnet ut piksel for piksel.</p>
+    <ul class="specs">
+      <li><b>800 &#xD7; 480</b> piksler</li>
+      <li>Spectra 6 &#x2014; <b>6 farger</b></li>
+      <li>Ingen gr&#xE5;toner</li>
+      <li>1-bits fonter</li>
+      <li>Full oppdatering <b>~18 s</b></li>
+    </ul>
+  </header>
+
+  <div class="controls">
+    <div class="ctl">
+      <span class="ctl-label" id="lbl-mode">Farger</span>
+      <div class="seg" role="group" aria-labelledby="lbl-mode">
+        <button type="button" id="mode-panel" data-mode="panel" aria-pressed="true">Slik panelet ser ut</button>
+        <button type="button" id="mode-rgb" data-mode="rgb" aria-pressed="false">Ren RGB</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <span class="ctl-label" id="lbl-zoom">Zoom</span>
+      <div class="seg" role="group" aria-labelledby="lbl-zoom">
+        <button type="button" id="zoom-1" data-zoom="1" aria-pressed="true">1&#xD7;</button>
+        <button type="button" id="zoom-2" data-zoom="2" aria-pressed="false">2&#xD7;</button>
+      </div>
+    </div>
+    <label class="switch" for="realism">
+      <input type="checkbox" id="realism" checked>
+      Papirstruktur og lysrefleks
+    </label>
+    <button type="button" class="btn" id="refresh">Spill av full oppdatering</button>
+  </div>
+
+  <div>
+    <div class="viewport" id="viewport" data-zoom="1">
+      <div class="device" id="device">
+        <div class="panel" id="panel">
+          <canvas id="epd" width="800" height="480" role="img"
+            aria-label="reTerminal E1002 ePaper-dashbord: v&#xE6;r, &#xE5;tte-timers graf, fem dagers varsel, markedskolonne og ni byer."></canvas>
+          <div class="layer grain" id="grain"></div>
+          <div class="layer glare"></div>
+          <div class="layer flash" id="flash"></div>
+        </div>
+      </div>
+    </div>
+    <p class="caption">
+      <span>Eksempeldata fra data-feed-example.json &#x2014; ingen live-leverand&#xF8;r er koblet til enn&#xE5;</span>
+      <span>Rammen rundt er kun illustrasjon</span>
+    </p>
+  </div>
+
+  <section class="section">
+    <h2>Panelets seks farger</h2>
+    <div class="swatches" id="swatches"></div>
+    <div class="callout">
+      <b>Merk: panelet har seks farger, ikke sju.</b> Spectra 6 (E6) gir svart, hvitt, r&#xF8;dt, gult, gr&#xF8;nt og bl&#xE5;tt. De eldre ACeP-panelene hadde sju ved &#xE5; legge til oransje. YAML-en definerer n&#xF8;yaktig disse seks som <code>Color</code>-konstanter, og ingen annen verdi kan n&#xE5; skjermen &#x2014; derfor lagrer gjengivelsen her bare en fargeindeks 0&#x2013;5 per piksel.
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Hva som er ekte og hva som er anslag</h2>
+    <div class="notes">
+      <div class="note">
+        <h3>Regnet ut fra kildekoden</h3>
+        <ul>
+          <li>Alle koordinater, bredder og avstander er lest rett fra <code>display:</code>-lambdaen &#x2014; ingen tall er justert for &#xE5; se penere ut.</li>
+          <li><b>Linjer</b> tegnes med Bresenham og <b>sirkler</b> med midtpunktalgoritmen, slik ESPHome gj&#xF8;r det. V&#xE6;rikonene er de samme lagene av sirkler, rektangler og streker.</li>
+          <li><b>Teksten er 1-bits.</b> Hver bokstav rendres og terskles til av/p&#xE5;, akkurat som <code>bpp: 1</code> p&#xE5; enheten. Ingen kantutjevning, ingen halvtoner.</li>
+          <li>Skriftene er de samme: <b>Inter</b> 700/600 og <b>JetBrains Mono</b> 400, i de fem st&#xF8;rrelsene YAML-en definerer.</li>
+          <li>Rammebufferet holder &#xE9;n av seks fargeindekser per piksel. En gr&#xE5;tone er fysisk umulig &#xE5; f&#xE5; inn i bildet.</li>
+        </ul>
+      </div>
+      <div class="note">
+        <h3>Tiln&#xE6;rmet</h3>
+        <ul>
+          <li><b>Fargeverdiene</b> i &#xAB;slik panelet ser ut&#xBB; er mitt anslag p&#xE5; hvordan Spectra 6-pigmentene leses av i vanlig romlys. Ekte panelfarger varierer med belysning og synsvinkel. Bytt til &#xAB;ren RGB&#xBB; for verdiene YAML-en faktisk setter.</li>
+          <li><b>Tekstplassering</b> kan avvike ett par piksler: nettleseren og ESPHome regner ut fonth&#xF8;yde p&#xE5; litt ulikt vis.</li>
+          <li><b>Papirstruktur og lysrefleks</b> ligger som et lag opp&#xE5; bildet for &#xE5; etterligne den matte overflaten. De r&#xF8;rer ikke pikslene.</li>
+          <li><b>Rammen</b> er en n&#xF8;ytral illustrasjon, ikke en gjengivelse av kabinettet.</li>
+          <li>Oppdateringsanimasjonen er komprimert fra ~18 sekunder til rundt fire.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer>Kilde: seeed-1002-dashboard.yaml, linje 574&#x2013;913 &#xB7; aisenseapi/reterminal-e1002-esphome-tagent @ c31896e</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var W = 800, H = 480;
+  var BLACK = 0, WHITE = 1, RED = 2, YELLOW = 3, GREEN = 4, BLUE = 5;
+
+  var PALETTES = {
+    panel: ["#31302c", "#d8d5ca", "#9b3a30", "#c8a733", "#4f6b3c", "#334a6e"],
+    rgb:   ["#000000", "#ffffff", "#ff0000", "#ffff00", "#00ff00", "#0000ff"]
+  };
+  var SWATCH_META = [
+    { name: "Svart",  use: "Tekst, skillelinjer, ikonkonturer" },
+    { name: "Hvit",   use: "Bakgrunn og innsiden av skyene" },
+    { name: "R\u00F8d",    use: "Temperaturgrad, kursfall, feilmelding" },
+    { name: "Gul",    use: "Sol, solstr\u00E5ler og lynet" },
+    { name: "Gr\u00F8nn",  use: "Ikonbokser, kursoppgang, m\u00E5nens skygge" },
+    { name: "Bl\u00E5",    use: "Regn, sn\u00F8, t\u00E5ke, luftfuktighet, lave temperaturer" }
+  ];
+
+  var DATA = {
+    wx_loc: "Aker brygge, Oslo",
+    wx_now: "Skyet",
+    wx_temp: 14.4,
+    wx_hum: 54,
+    wx_icon: "cloud",
+    wx_temp_in: 25.3,
+    wx_status: "",
+    wx_updated: "14:36",
+    ip: "192.168.68.121",
+    battery: 87,
+    hourly: [
+      { t: "15:00", icon: "partly", temp: 14.4, rain: 10 },
+      { t: "16:00", icon: "cloud",  temp: 14.1, rain: 20 },
+      { t: "17:00", icon: "rain",   temp: 13.5, rain: 45 },
+      { t: "18:00", icon: "rain",   temp: 12.8, rain: 60 },
+      { t: "19:00", icon: "cloud",  temp: 12.3, rain: 30 },
+      { t: "20:00", icon: "cloud",  temp: 11.9, rain: 15 },
+      { t: "21:00", icon: "partly", temp: 11.4, rain: 10 },
+      { t: "22:00", icon: "night",  temp: 10.9, rain: 5 }
+    ],
+    daily: [
+      { d: "i morgen", icon: "cloud",  hi: 14.6, lo: 7.2 },
+      { d: "torsdag",  icon: "rain",   hi: 8.1,  lo: 5.4 },
+      { d: "fredag",   icon: "cloud",  hi: 11.8, lo: 7.8 },
+      { d: "l\u00F8rdag",  icon: "rain",   hi: 14.6, lo: 7.2 },
+      { d: "s\u00F8ndag",  icon: "partly", hi: 15.2, lo: 8.8 }
+    ],
+    market_updated: "14:35",
+    stocks: [
+      { symbol: "EQNR",  price: 312.40,  change: 1.42,  spark: [306.2, 307.5, 307.0, 309.1, 308.7, 310.8, 310.4, 312.4] },
+      { symbol: "DNB",   price: 241.10,  change: -0.38, spark: [243.0, 242.7, 242.8, 242.2, 242.4, 241.8, 241.9, 241.1] },
+      { symbol: "KOG",   price: 1682.00, change: 2.10,  spark: [1647, 1653, 1650, 1661, 1658, 1668, 1675, 1682] },
+      { symbol: "OSEBX", price: 1482.60, change: 0.61,  spark: [1473.6, 1476.1, 1475.4, 1477.0, 1479.2, 1478.1, 1482.9, 1482.6] }
+    ],
+    fx: [
+      { symbol: "EUR/NOK", price: 11.6200, change: 0.14,  spark: [11.58, 11.57, 11.59, 11.58, 11.61, 11.60, 11.61, 11.62] },
+      { symbol: "USD/NOK", price: 10.0700, change: -0.22, spark: [10.12, 10.11, 10.12, 10.10, 10.11, 10.09, 10.08, 10.07] }
+    ],
+    commodities: [
+      { symbol: "BRENT", price: 78.42,   change: 0.80,  spark: [77.80, 77.95, 77.90, 78.10, 78.02, 78.25, 78.18, 78.42] },
+      { symbol: "GULL",  price: 2631.00, change: -0.20, spark: [2637, 2639, 2636, 2637, 2634, 2635, 2632, 2631] },
+      { symbol: "S\u00D8LV",  price: 31.18,   change: 1.10,  spark: [30.78, 30.82, 30.80, 30.95, 30.92, 31.02, 31.08, 31.18] }
+    ],
+    cities: [
+      { name: "LONDON",    temp: 18, icon: "rain",   valid: true },
+      { name: "MALAGA",    temp: 29, icon: "sunny",  valid: true },
+      { name: "CASCAIS",   temp: 24, icon: "partly", valid: true },
+      { name: "MARILIA",   temp: 27, icon: "sunny",  valid: true },
+      { name: "FARSUND",   temp: 16, icon: "cloud",  valid: true },
+      { name: "TOKYO",     temp: 31, icon: "rain",   valid: true },
+      { name: "NEW YORK",  temp: 26, icon: "partly", valid: true },
+      { name: "DOHA",      temp: 39, icon: "sunny",  valid: true },
+      { name: "MELBOURNE", temp: 13, icon: "fog",    valid: true }
+    ]
+  };
+
+  var LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ\u00C6\u00D8\u00C5abcdefghijklmnopqrstuvwxyz\u00E6\u00F8\u00E5";
+  var FONTS = {
+    f_big:     { css: '700 48px Inter, sans-serif',            glyphs: "0123456789.,:\u00B0-+ " },
+    f_med:     { css: '700 30px Inter, sans-serif',            glyphs: LETTERS + "0123456789.,:\u00B0-+ " },
+    f_temp:    { css: '600 22px Inter, sans-serif',            glyphs: "0123456789.,:\u00B0-+ " },
+    f_mono_sm: { css: '400 14px "JetBrains Mono", monospace',  glyphs: LETTERS + "0123456789.,:\u00B0%$-+=/ " },
+    f_mono_xs: { css: '400 11px "JetBrains Mono", monospace',  glyphs: LETTERS + "0123456789.,:\u00B0%$-+=?/ " }
+  };
+
+  var buf = new Uint8Array(W * H);
+  var canvas = document.getElementById("epd");
+  var ctx = canvas.getContext("2d");
+  var img = ctx.createImageData(W, H);
+
+  var tcan = document.createElement("canvas");
+  tcan.width = 1024; tcan.height = 140;
+  var tctx = tcan.getContext("2d", { willReadFrequently: true });
+
+  /* ---------- primitives, ported from ESPHome's display buffer ---------- */
+
+  function px(x, y, c){
+    x = x | 0; y = y | 0;
+    if (x < 0 || y < 0 || x >= W || y >= H) return;
+    buf[y * W + x] = c;
+  }
+  function hline(x, y, w, c){
+    for (var i = 0; i < w; i++) px(x + i, y, c);
+  }
+  function fillRect(x, y, w, h, c){
+    for (var j = 0; j < h; j++) for (var i = 0; i < w; i++) px(x + i, y + j, c);
+  }
+  function filledCircle(cx, cy, radius, c){
+    var dx = -radius, dy = 0, err = 2 - 2 * radius, e2;
+    do {
+      px(cx - dx, cy + dy, c);
+      px(cx + dx, cy + dy, c);
+      px(cx + dx, cy - dy, c);
+      px(cx - dx, cy - dy, c);
+      var hw = 2 * (-dx) + 1;
+      if (hw > 0){
+        hline(cx + dx, cy + dy, hw, c);
+        if (dy !== 0) hline(cx + dx, cy - dy, hw, c);
+      }
+      e2 = err;
+      if (e2 < dy){ err += ++dy * 2 + 1; if (-dx === dy && e2 <= dx) e2 = 0; }
+      if (e2 > dx){ err += ++dx * 2 + 1; }
+    } while (dx <= 0);
+  }
+  function line(x1, y1, x2, y2, c){
+    var dx = Math.abs(x2 - x1), sx = x1 < x2 ? 1 : -1;
+    var dy = -Math.abs(y2 - y1), sy = y1 < y2 ? 1 : -1;
+    var err = dx + dy, e2;
+    for (;;){
+      px(x1, y1, c);
+      if (x1 === x2 && y1 === y2) break;
+      e2 = 2 * err;
+      if (e2 >= dy){ err += dy; x1 += sx; }
+      if (e2 <= dx){ err += dx; y1 += sy; }
+    }
+  }
+  // C integer division truncates toward zero.
+  function idiv(a, b){ return Math.trunc(a / b); }
+
+  /* ---------- 1-bit text ---------- */
+
+  function measureFonts(){
+    for (var id in FONTS){
+      var f = FONTS[id];
+      tctx.font = f.css;
+      var m = tctx.measureText(f.glyphs);
+      f.ascent = m.actualBoundingBoxAscent || 10;
+      f.descent = m.actualBoundingBoxDescent || 4;
+    }
+  }
+
+  function text(x, y, fontId, color, align, str){
+    if (str === "" || str == null) return;
+    var f = FONTS[fontId];
+    var pad = 4;
+    tctx.setTransform(1, 0, 0, 1, 0, 0);
+    tctx.font = f.css;
+    tctx.textAlign = "left";
+    tctx.textBaseline = "alphabetic";
+    var width = tctx.measureText(str).width;
+    var w = Math.min(tcan.width, Math.ceil(width) + pad * 2 + 2);
+    var h = Math.min(tcan.height, Math.ceil(f.ascent + f.descent) + pad * 2 + 2);
+    tctx.clearRect(0, 0, w, h);
+    tctx.fillStyle = "#000";
+    tctx.fillText(str, pad, pad + f.ascent);
+
+    var ox = x;
+    if (align === "right") ox = x - Math.round(width);
+    else if (align === "center") ox = x - Math.round(width / 2);
+    ox -= pad;
+    var oy = y - pad;
+
+    var data = tctx.getImageData(0, 0, w, h).data;
+    for (var j = 0; j < h; j++){
+      for (var i = 0; i < w; i++){
+        if (data[(j * w + i) * 4 + 3] >= 128) px(ox + i, oy + j, color);
+      }
+    }
+  }
+
+  /* ---------- drawing helpers, ported one-to-one from the lambda ---------- */
+
+  function roundedBox(x, y, w, h, r, c){
+    fillRect(x + r, y, w - 2 * r, h, c);
+    fillRect(x, y + r, w, h - 2 * r, c);
+    filledCircle(x + r, y + r, r, c);
+    filledCircle(x + w - r - 1, y + r, r, c);
+    filledCircle(x + r, y + h - r - 1, r, c);
+    filledCircle(x + w - r - 1, y + h - r - 1, r, c);
+  }
+
+  function drawCloud(cx, cy, s){
+    var base_y = cy + idiv(s, 3);
+    filledCircle(cx - idiv(s, 2), cy, idiv(s * 2, 3) + 2, BLACK);
+    filledCircle(cx + idiv(s, 3), cy - idiv(s, 3), idiv(s * 5, 6) + 2, BLACK);
+    filledCircle(cx + s, cy + idiv(s, 5), idiv(s * 3, 5) + 2, BLACK);
+    fillRect(cx - s - 1, base_y - 2, s * 2 + 2, idiv(s * 2, 3) + 4, BLACK);
+
+    filledCircle(cx - idiv(s, 2), cy, idiv(s * 2, 3), WHITE);
+    filledCircle(cx + idiv(s, 3), cy - idiv(s, 3), idiv(s * 5, 6), WHITE);
+    filledCircle(cx + s, cy + idiv(s, 5), idiv(s * 3, 5), WHITE);
+    fillRect(cx - s + 1, base_y - 1, s * 2 - 1, idiv(s * 2, 3) + 1, WHITE);
+  }
+
+  function drawSun(cx, cy, s){
+    var ray = s + 4;
+    line(cx - ray, cy, cx - s - 1, cy, YELLOW);
+    line(cx + s + 1, cy, cx + ray, cy, YELLOW);
+    line(cx, cy - ray, cx, cy - s - 1, YELLOW);
+    line(cx, cy + s + 1, cx, cy + ray, YELLOW);
+    line(cx - ray + 2, cy - ray + 2, cx - s + 1, cy - s + 1, YELLOW);
+    line(cx + s - 1, cy + s - 1, cx + ray - 2, cy + ray - 2, YELLOW);
+    line(cx + s - 1, cy - s + 1, cx + ray - 2, cy - ray + 2, YELLOW);
+    line(cx - ray + 2, cy + ray - 2, cx - s + 1, cy + s - 1, YELLOW);
+    filledCircle(cx, cy, s + 1, BLACK);
+    filledCircle(cx, cy, s - 1, YELLOW);
+  }
+
+  function drawIcon(cx, cy, s, kind){
+    var i, dropX, dropY, snowX, snowY;
+    if (kind === "sunny"){
+      drawSun(cx, cy, s);
+    } else if (kind === "night"){
+      filledCircle(cx, cy, s + 1, BLACK);
+      filledCircle(cx, cy, s - 1, YELLOW);
+      filledCircle(cx + idiv(s, 2), cy - idiv(s, 3), s - 2, GREEN);
+    } else if (kind === "partly"){
+      drawSun(cx - s, cy - idiv(s, 2), idiv(s * 2, 3));
+      drawCloud(cx, cy + idiv(s, 3), s);
+    } else if (kind === "rain"){
+      drawCloud(cx, cy - idiv(s, 3), s);
+      for (i = -1; i <= 1; i++){
+        dropX = cx + idiv(i * s * 2, 3);
+        dropY = cy + s + 2 + (i === 0 ? 2 : 0);
+        line(dropX + 2, dropY - 4, dropX - 1, dropY + 2, BLUE);
+        line(dropX + 3, dropY - 4, dropX, dropY + 2, BLUE);
+        filledCircle(dropX, dropY + 2, 2, BLUE);
+      }
+    } else if (kind === "storm"){
+      drawCloud(cx, cy - idiv(s, 3), s);
+      var bx = cx + 2, by = cy + idiv(s, 2);
+      line(bx + 4, by, bx - 2, by + 8, YELLOW);
+      line(bx - 2, by + 8, bx + 3, by + 8, YELLOW);
+      line(bx + 3, by + 8, bx - 4, by + 17, YELLOW);
+      line(bx + 5, by, bx - 1, by + 8, YELLOW);
+    } else if (kind === "fog"){
+      drawCloud(cx, cy - idiv(s, 2), s);
+      line(cx - s, cy + s, cx + s, cy + s, BLUE);
+      line(cx - idiv(s, 2), cy + s + 5, cx + s + 3, cy + s + 5, BLUE);
+    } else if (kind === "wind"){
+      drawCloud(cx, cy - idiv(s, 2), s);
+      line(cx - s, cy + s, cx + s, cy + s, BLUE);
+      line(cx - idiv(s, 2), cy + s + 5, cx + s + 4, cy + s + 5, BLUE);
+      filledCircle(cx + s + 4, cy + s + 2, 3, BLUE);
+      filledCircle(cx + s + 4, cy + s + 2, 2, GREEN);
+    } else if (kind === "snow"){
+      drawCloud(cx, cy - idiv(s, 3), s);
+      for (i = -1; i <= 1; i++){
+        snowX = cx + idiv(i * s * 2, 3);
+        snowY = cy + s + 3;
+        line(snowX - 3, snowY, snowX + 3, snowY, BLUE);
+        line(snowX, snowY - 3, snowX, snowY + 3, BLUE);
+      }
+    } else {
+      drawCloud(cx, cy, s);
+    }
+  }
+
+  function drawSpark(x, y, w, h, values, count, c){
+    if (count < 2) return;
+    var min = values[0], max = values[0], i;
+    for (i = 1; i < count; i++){
+      if (values[i] < min) min = values[i];
+      if (values[i] > max) max = values[i];
+    }
+    var range = max - min;
+    if (range < 0.001) range = 1.0;
+    var prevX = x;
+    var prevY = y + h - 1 - Math.trunc((values[0] - min) * (h - 2) / range);
+    for (i = 1; i < count; i++){
+      var pointX = x + idiv(i * (w - 1), count - 1);
+      var pointY = y + h - 1 - Math.trunc((values[i] - min) * (h - 2) / range);
+      line(prevX, prevY, pointX, pointY, c);
+      line(prevX, prevY + 1, pointX, pointY + 1, c);
+      prevX = pointX;
+      prevY = pointY;
+    }
+  }
+
+  /* ---------- printf-style number formatting (C locale) ---------- */
+
+  function f(v, d){ return v.toFixed(d); }
+  function signed(v){ return (v >= 0 ? "+" : "") + v.toFixed(2) + "%"; }
+  function changeColor(v){ return v > 0 ? GREEN : (v < 0 ? RED : BLACK); }
+
+  /* ---------- the display lambda ---------- */
+
+  function render(){
+    buf.fill(WHITE);
+
+    fillRect(452, 0, 1, 400, BLACK);
+    fillRect(0, 400, 800, 1, BLACK);
+
+    // current weather
+    roundedBox(16, 14, 52, 52, 10, GREEN);
+    drawIcon(42, 40, 13, DATA.wx_icon);
+    text(78, 14, "f_med", BLACK, "left", DATA.wx_now);
+    text(78, 52, "f_mono_xs", BLACK, "left", DATA.wx_loc);
+    text(438, 10, "f_big", BLACK, "right", f(DATA.wx_temp, 1));
+    text(451, 10, "f_big", RED, "right", "\u00B0");
+    text(438, 68, "f_mono_xs", BLUE, "right",
+      "LUFT " + DATA.wx_hum + "%  INNE " + f(DATA.wx_temp_in, 1) + "\u00B0");
+    fillRect(16, 88, 422, 1, BLACK);
+
+    // eight-hour chart
+    text(16, 99, "f_mono_sm", BLACK, "left", "NESTE 8 TIMER");
+    text(438, 101, "f_mono_xs", BLUE, "right", "TEMP / REGN");
+
+    var chartX = 22, chartY = 132, chartW = 410, chartH = 48, rainBase = 202;
+    var points = DATA.hourly.length;
+    var temps = DATA.hourly.map(function(h){ return h.temp; });
+    if (points >= 2){
+      var tMin = Math.min.apply(null, temps), tMax = Math.max.apply(null, temps);
+      var tRange = tMax - tMin;
+      if (tRange < 1.0) tRange = 1.0;
+      for (var i = 0; i < points; i++){
+        var pointX = chartX + idiv(i * chartW, points - 1);
+        var rainH = idiv(DATA.hourly[i].rain * 28, 100);
+        if (rainH < 2 && DATA.hourly[i].rain > 0) rainH = 2;
+        fillRect(pointX - 3, rainBase - rainH, 6, rainH, BLUE);
+        if (i % 2 === 0 || i === points - 1){
+          var pointY = chartY + chartH - 1 - Math.trunc((temps[i] - tMin) * (chartH - 2) / tRange);
+          text(pointX, pointY - 13, "f_mono_xs", BLACK, "center", f(temps[i], 0) + "\u00B0");
+        }
+        text(pointX, 211, "f_mono_xs", BLACK, "center", DATA.hourly[i].t);
+      }
+      drawSpark(chartX, chartY, chartW, chartH, temps, points, RED);
+    }
+
+    fillRect(16, 232, 422, 1, BLACK);
+
+    // five days
+    text(16, 242, "f_mono_sm", BLACK, "left", "FEM DAGER");
+    var dx0 = 16, dw = idiv(422, 5), dyT = 265, dyIc = 284, dyHi = 340, dyLo = 369, dBox = 42;
+    for (var d = 0; d < 5; d++){
+      var cx = dx0 + dw * d + idiv(dw, 2);
+      text(cx, dyT, "f_mono_xs", BLACK, "center", DATA.daily[d].d);
+      roundedBox(cx - idiv(dBox, 2), dyIc, dBox, dBox, 9, GREEN);
+      drawIcon(cx, dyIc + idiv(dBox, 2), 9, DATA.daily[d].icon);
+      text(cx, dyHi, "f_temp", BLACK, "center", f(DATA.daily[d].hi, 1) + "\u00B0");
+      text(cx, dyLo, "f_mono_sm", BLUE, "center", f(DATA.daily[d].lo, 1) + "\u00B0");
+    }
+
+    // market column
+    var mx = 466;
+    text(mx, 14, "f_mono_sm", BLACK, "left", "MARKEDER");
+    text(786, 16, "f_mono_xs", BLACK, "right", "DATA " + DATA.market_updated);
+
+    DATA.stocks.forEach(function(row, i){
+      var y = 36 + i * 27;
+      var c = changeColor(row.change);
+      text(mx, y, "f_mono_sm", BLACK, "left", row.symbol);
+      text(612, y, "f_mono_sm", BLACK, "right", f(row.price, 2));
+      text(700, y, "f_mono_sm", c, "right", signed(row.change));
+      drawSpark(715, y - 2, 69, 22, row.spark, row.spark.length, c);
+    });
+
+    fillRect(mx, 145, 320, 1, BLACK);
+    text(mx, 154, "f_mono_sm", BLACK, "left", "VALUTA");
+    DATA.fx.forEach(function(row, i){
+      var y = 177 + i * 27;
+      var c = changeColor(row.change);
+      text(mx, y, "f_mono_sm", BLACK, "left", row.symbol);
+      text(612, y, "f_mono_sm", BLACK, "right", f(row.price, 4));
+      text(700, y, "f_mono_sm", c, "right", signed(row.change));
+      drawSpark(715, y - 2, 69, 22, row.spark, row.spark.length, c);
+    });
+
+    fillRect(mx, 230, 320, 1, BLACK);
+    text(mx, 239, "f_mono_sm", BLACK, "left", "R\u00C5VARER");
+    DATA.commodities.forEach(function(row, i){
+      var y = 262 + i * 27;
+      var c = changeColor(row.change);
+      text(mx, y, "f_mono_sm", BLACK, "left", row.symbol);
+      text(612, y, "f_mono_sm", BLACK, "right", "$" + f(row.price, 2));
+      text(700, y, "f_mono_sm", c, "right", signed(row.change));
+      drawSpark(715, y - 2, 69, 22, row.spark, row.spark.length, c);
+    });
+
+    // technical block
+    fillRect(mx, 341, 320, 1, BLACK);
+    text(mx, 350, "f_mono_xs", BLACK, "left", "WX OPEN-METEO.COM");
+    text(786, 350, "f_mono_xs", BLACK, "right", "OPPD " + DATA.wx_updated);
+    text(786, 368, "f_mono_xs", BLACK, "right", "IP " + DATA.ip);
+    text(786, 386, "f_mono_xs", BLUE, "right", "BAT " + f(DATA.battery, 0) + "%");
+    if (DATA.wx_status) text(mx, 386, "f_mono_xs", RED, "left", DATA.wx_status);
+
+    // world cities
+    var cityX0 = 8, cityW = idiv(784, 9);
+    for (var k = 0; k < 9; k++){
+      var ccx = cityX0 + cityW * k + idiv(cityW, 2);
+      if (k > 0) fillRect(cityX0 + cityW * k, 407, 1, 65, BLACK);
+      text(ccx, 409, "f_mono_xs", BLACK, "center", DATA.cities[k].name);
+      roundedBox(ccx - 29, 432, 22, 22, 5, GREEN);
+      drawIcon(ccx - 18, 443, 4, DATA.cities[k].icon);
+      if (DATA.cities[k].valid){
+        text(ccx + 2, 429, "f_temp", BLACK, "left", f(DATA.cities[k].temp, 0) + "\u00B0");
+      } else {
+        text(ccx + 2, 429, "f_temp", RED, "left", "--");
+      }
+    }
+  }
+
+  /* ---------- paint the index buffer through the chosen palette ---------- */
+
+  var mode = "panel";
+
+  function paint(){
+    var pal = PALETTES[mode].map(function(hex){
+      return [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
+    });
+    var d = img.data;
+    for (var i = 0, n = W * H; i < n; i++){
+      var c = pal[buf[i]];
+      var o = i * 4;
+      d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+  }
+
+  /* ---------- swatches ---------- */
+
+  function buildSwatches(){
+    var host = document.getElementById("swatches");
+    host.textContent = "";
+    SWATCH_META.forEach(function(meta, i){
+      var cell = document.createElement("div");
+      cell.className = "sw";
+      var chip = document.createElement("div");
+      chip.className = "sw-chip";
+      chip.style.background = PALETTES[mode][i];
+      var body = document.createElement("div");
+      body.className = "sw-body";
+      var name = document.createElement("div");
+      name.className = "sw-name";
+      name.textContent = meta.name;
+      var hex = document.createElement("div");
+      hex.className = "sw-hex";
+      hex.textContent = PALETTES[mode][i].toUpperCase();
+      var use = document.createElement("div");
+      use.className = "sw-use";
+      use.textContent = meta.use;
+      body.appendChild(name); body.appendChild(hex); body.appendChild(use);
+      cell.appendChild(chip); cell.appendChild(body);
+      host.appendChild(cell);
+    });
+  }
+
+  /* ---------- paper grain ---------- */
+
+  function buildGrain(){
+    var n = document.createElement("canvas");
+    n.width = 96; n.height = 96;
+    var nc = n.getContext("2d");
+    var nd = nc.createImageData(96, 96);
+    for (var i = 0; i < 96 * 96; i++){
+      var v = 200 + Math.floor(Math.random() * 56);
+      nd.data[i * 4] = v; nd.data[i * 4 + 1] = v; nd.data[i * 4 + 2] = v; nd.data[i * 4 + 3] = 255;
+    }
+    nc.putImageData(nd, 0, 0);
+    document.getElementById("grain").style.backgroundImage = "url(" + n.toDataURL() + ")";
+  }
+
+  /* ---------- controls ---------- */
+
+  var panel = document.getElementById("panel");
+  var device = document.getElementById("device");
+  var flash = document.getElementById("flash");
+
+  function setMode(next){
+    mode = next;
+    document.getElementById("mode-panel").setAttribute("aria-pressed", String(next === "panel"));
+    document.getElementById("mode-rgb").setAttribute("aria-pressed", String(next === "rgb"));
+    paint();
+    buildSwatches();
+  }
+  document.getElementById("mode-panel").addEventListener("click", function(){ setMode("panel"); });
+  document.getElementById("mode-rgb").addEventListener("click", function(){ setMode("rgb"); });
+
+  function setZoom(z){
+    document.documentElement.style.setProperty("--zoom", String(z));
+    document.getElementById("viewport").setAttribute("data-zoom", String(z));
+    document.getElementById("zoom-1").setAttribute("aria-pressed", String(z === 1));
+    document.getElementById("zoom-2").setAttribute("aria-pressed", String(z === 2));
+  }
+  document.getElementById("zoom-1").addEventListener("click", function(){ setZoom(1); });
+  document.getElementById("zoom-2").addEventListener("click", function(){ setZoom(2); });
+
+  var realism = document.getElementById("realism");
+  realism.addEventListener("change", function(){
+    var plain = realism.checked ? "0" : "1";
+    panel.setAttribute("data-plain", plain);
+    device.setAttribute("data-plain", plain);
+  });
+
+  // A Spectra 6 full refresh drives every pigment across the panel before the
+  // final image settles: roughly 18 seconds of colour washes, compressed here.
+  var refreshBtn = document.getElementById("refresh");
+  var busy = false;
+  refreshBtn.addEventListener("click", function(){
+    if (busy) return;
+    var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce){ render(); paint(); return; }
+    busy = true;
+    refreshBtn.disabled = true;
+    refreshBtn.textContent = "Oppdaterer \u2026";
+    var pal = PALETTES[mode];
+    var steps = [pal[1], pal[0], pal[1], pal[2], pal[3], pal[4], pal[5], pal[0], pal[1]];
+    var step = 0;
+    flash.style.transition = "none";
+    var timer = setInterval(function(){
+      if (step < steps.length){
+        flash.style.background = steps[step];
+        flash.style.opacity = "1";
+        step++;
+      } else {
+        clearInterval(timer);
+        flash.style.transition = "opacity .45s ease-out";
+        flash.style.opacity = "0";
+        busy = false;
+        refreshBtn.disabled = false;
+        refreshBtn.textContent = "Spill av full oppdatering";
+      }
+    }, 420);
+  });
+
+  /* ---------- boot ---------- */
+
+  function boot(){
+    measureFonts();
+    render();
+    paint();
+    buildSwatches();
+    buildGrain();
+  }
+
+  var faces = [
+    '700 48px Inter', '700 30px Inter', '600 22px Inter',
+    '400 14px "JetBrains Mono"', '400 11px "JetBrains Mono"'
+  ];
+  if (document.fonts && document.fonts.load){
+    Promise.all(faces.map(function(spec){
+      return document.fonts.load(spec, "0123456789ABC\u00B0").catch(function(){});
+    })).then(function(){ return document.fonts.ready; }).catch(function(){}).then(boot);
+  } else {
+    boot();
+  }
+})();
+</script>
+</body>
+</html>

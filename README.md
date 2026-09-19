@@ -11,6 +11,24 @@ The 800×480 screen uses two persistent columns plus a full-width city strip:
 
 The layout only uses the E1002 panel's six native colors: black, white, red, green, blue and yellow. Text is rendered with one-bit fonts and charts use solid two-pixel lines; there are no gradients or simulated gray surfaces. Weather icons are built from layered circles, rectangles and lines, with black cloud outlines, sun rays, rain drops, lightning, fog, wind and snow details.
 
+## Browser preview
+
+`docs/index.html` is a single self-contained page that renders the dashboard the way the display
+lambda draws it: the same coordinates, the same Bresenham lines and midpoint circles, one-bit text
+without antialiasing, and a framebuffer that can only hold the panel's six colors. It carries the
+example values from `data-feed-example.json` and can switch between the muted Spectra 6 pigments and
+the raw RGB constants the YAML sets.
+
+Viewing it needs nothing but a browser:
+
+- <https://raw.githack.com/aisenseapi/reterminal-e1002-esphome-tagent/main/docs/index.html>
+- Turning on GitHub Pages (Settings -> Pages -> branch `main`, folder `/docs`) serves the same page
+  from <https://aisenseapi.github.io/reterminal-e1002-esphome-tagent/> without a third-party proxy.
+
+The panel colors in the preview are an estimate of how the pigments read in room light rather than
+measured values, and text can sit a pixel or two off, because the browser and ESPHome derive font
+height slightly differently.
+
 ## E1002 refresh policy
 
 The Spectra 6 panel has no partial refresh and a full redraw takes roughly 15–20 seconds. The default scheduled update is therefore 30 minutes. The green hardware button can request an immediate refresh. Avoid short refresh intervals, especially on battery power.
