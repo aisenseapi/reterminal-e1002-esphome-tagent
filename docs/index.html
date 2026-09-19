@@ -62,7 +62,7 @@
   body{
     background:var(--ground);
     color:var(--ink);
-    font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
     font-size:15px;
     line-height:1.55;
     -webkit-font-smoothing:antialiased;
@@ -129,7 +129,19 @@
     border:1px solid var(--rule);
     border-radius:4px;
   }
-  .langbar .seg button{padding:7px 17px;font-size:12.5px;}
+  .langbar .seg button{padding:7px 15px;font-size:12.5px;}
+  @media (max-width:640px){
+    .langbar{justify-content:flex-start;}
+    .langbar .seg{flex-wrap:wrap;gap:6px;border:0;overflow:visible;}
+    .langbar .seg button,.langbar .seg button:last-child{
+      border:1px solid var(--rule);border-radius:3px;padding:6px 12px;
+    }
+  }
+  /* Chinese sets solid, so the wide tracking used for Latin caps only loosens it. */
+  :root[data-lang="zh"] :is(.eyebrow,.specs,.ctl-label,.caption,h2,.note h3,.sw-name){
+    letter-spacing:.02em;
+  }
+  :root[data-lang="zh"] h1{letter-spacing:0;}
   .langbar :is(button,input):focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
 
   /* ---- controls ---- */
@@ -328,6 +340,8 @@
     <div class="seg" role="group" aria-label="Spr&#xE5;k / Language">
       <button type="button" id="lang-no" lang="nb" aria-pressed="true">Norsk</button>
       <button type="button" id="lang-en" lang="en" aria-pressed="false">English</button>
+      <button type="button" id="lang-pt" lang="pt" aria-pressed="false">Portugu&#xEA;s</button>
+      <button type="button" id="lang-zh" lang="zh-Hans" aria-pressed="false">&#x4E2D;&#x6587;</button>
     </div>
   </div>
 
@@ -436,18 +450,21 @@
   // Strings the script writes itself. Everything else lives in the markup and is
   // swapped through data-i18n. The panel is absent from both on purpose: its
   // labels come from the firmware, so they stay Norwegian in every language.
+  // Strings the script writes itself. Everything else lives in the markup and is
+  // swapped through data-i18n. The panel is absent from both on purpose: its
+  // labels come from the firmware, so they stay Norwegian in every language.
   var STR = {
     no: {
       refreshIdle: "Spill av full oppdatering",
       refreshBusy: "Oppdaterer \u2026",
       canvasAlt: "reTerminal E1002 ePaper-dashbord: v\u00E6r, \u00E5tte-timers graf, fem dagers varsel, markedskolonne og ni byer.",
       swatch: [
-        ["Svart",  "Tekst, skillelinjer, ikonkonturer"],
-        ["Hvit",   "Bakgrunn og innsiden av skyene"],
-        ["R\u00F8d",    "Temperaturgrad, kursfall, feilmelding"],
-        ["Gul",    "Sol, solstr\u00E5ler og lynet"],
-        ["Gr\u00F8nn",  "Ikonbokser, kursoppgang, m\u00E5nens skygge"],
-        ["Bl\u00E5",    "Regn, sn\u00F8, t\u00E5ke, luftfuktighet, lave temperaturer"]
+        ["Svart", "Tekst, skillelinjer, ikonkonturer"],
+        ["Hvit", "Bakgrunn og innsiden av skyene"],
+        ["R\u00F8d", "Temperaturgrad, kursfall, feilmelding"],
+        ["Gul", "Sol, solstr\u00E5ler og lynet"],
+        ["Gr\u00F8nn", "Ikonbokser, kursoppgang, m\u00E5nens skygge"],
+        ["Bl\u00E5", "Regn, sn\u00F8, t\u00E5ke, luftfuktighet, lave temperaturer"]
       ]
     },
     en: {
@@ -455,15 +472,42 @@
       refreshBusy: "Refreshing \u2026",
       canvasAlt: "reTerminal E1002 ePaper dashboard: weather, an eight-hour chart, a five-day forecast, a market column and nine cities.",
       swatch: [
-        ["Black",  "Text, dividers, icon outlines"],
-        ["White",  "Background and the inside of the clouds"],
-        ["Red",    "Degree sign, falling prices, error message"],
+        ["Black", "Text, dividers, icon outlines"],
+        ["White", "Background and the inside of the clouds"],
+        ["Red", "Degree sign, falling prices, error message"],
         ["Yellow", "Sun, sun rays and the lightning bolt"],
-        ["Green",  "Icon boxes, rising prices, the moon\u2019s shadow"],
-        ["Blue",   "Rain, snow, fog, humidity, low temperatures"]
+        ["Green", "Icon boxes, rising prices, the moon's shadow"],
+        ["Blue", "Rain, snow, fog, humidity, low temperatures"]
+      ]
+    },
+    pt: {
+      refreshIdle: "Reproduzir atualiza\u00E7\u00E3o completa",
+      refreshBusy: "A atualizar \u2026",
+      canvasAlt: "Painel ePaper reTerminal E1002: tempo, gr\u00E1fico de oito horas, previs\u00E3o de cinco dias, coluna de mercados e nove cidades.",
+      swatch: [
+        ["Preto", "Texto, separadores, contornos dos \u00EDcones"],
+        ["Branco", "Fundo e o interior das nuvens"],
+        ["Vermelho", "S\u00EDmbolo de grau, quedas de cota\u00E7\u00E3o, mensagem de erro"],
+        ["Amarelo", "Sol, raios de sol e o rel\u00E2mpago"],
+        ["Verde", "Caixas dos \u00EDcones, subidas de cota\u00E7\u00E3o, a sombra da lua"],
+        ["Azul", "Chuva, neve, nevoeiro, humidade, temperaturas baixas"]
+      ]
+    },
+    zh: {
+      refreshIdle: "\u64AD\u653E\u6574\u5C4F\u5237\u65B0",
+      refreshBusy: "\u5237\u65B0\u4E2D \u2026",
+      canvasAlt: "reTerminal E1002 \u7535\u5B50\u58A8\u6C34\u5C4F\u4EEA\u8868\u677F\uFF1A\u5929\u6C14\u3001\u516B\u5C0F\u65F6\u66F2\u7EBF\u3001\u4E94\u5929\u9884\u62A5\u3001\u5E02\u573A\u680F\u548C\u4E5D\u4E2A\u57CE\u5E02\u3002",
+      swatch: [
+        ["\u9ED1", "\u6587\u5B57\u3001\u5206\u9694\u7EBF\u3001\u56FE\u6807\u8F6E\u5ED3"],
+        ["\u767D", "\u80CC\u666F\u4E0E\u4E91\u7684\u5185\u90E8"],
+        ["\u7EA2", "\u5EA6\u6570\u7B26\u53F7\u3001\u4E0B\u8DCC\u884C\u60C5\u3001\u9519\u8BEF\u63D0\u793A"],
+        ["\u9EC4", "\u592A\u9633\u3001\u5149\u8292\u4E0E\u95EA\u7535"],
+        ["\u7EFF", "\u56FE\u6807\u5E95\u6846\u3001\u4E0A\u6DA8\u884C\u60C5\u3001\u6708\u4EAE\u7684\u9634\u5F71"],
+        ["\u84DD", "\u964D\u96E8\u3001\u96EA\u3001\u96FE\u3001\u6E7F\u5EA6\u3001\u4F4E\u6E29"]
       ]
     }
   };
+;
 
   var DATA = {
     wx_loc: "Aker brygge, Oslo",
@@ -925,47 +969,119 @@
   // it. BASE keeps the markup as authored, so switching back is lossless.
   var lang = "no";
   var BASE = {};
-  var EN = {
-    h1: "E1002 Panel View",
-    lede: "The entire drawing lambda from the ESPHome configuration has been ported to this page \u2014 the same coordinates, the same drawing primitives, the same six panel colors. What you see below is not a sketch of the layout; it is the layout, computed pixel by pixel.",
-    spec1: "<b>800 \u00D7 480</b> pixels",
-    spec2: "Spectra 6 \u2014 <b>6 colors</b>",
-    spec3: "No grays",
-    spec4: "1-bit fonts",
-    spec5: "Full refresh <b>~18 s</b>",
-    lbl_mode: "Colors",
-    mode_panel: "How the panel looks",
-    mode_rgb: "Raw RGB",
-    lbl_zoom: "Zoom",
-    realism: "Paper texture and glare",
-    cap1: "Example data from data-feed-example.json \u2014 no live provider is connected yet",
-    cap2: "The frame around it is illustration only",
-    h2_palette: "The panel's six colors",
-    callout: "<b>Note: the panel has six colors, not seven.</b> Spectra 6 (E6) gives black, white, red, yellow, green and blue. The older ACeP panels had seven by adding orange. The YAML defines exactly these six as <code>Color</code> constants, and no other value can reach the screen \u2014 which is why this rendering stores nothing but a color index 0\u20135 per pixel.",
-    h2_fidelity: "What is exact and what is an estimate",
-    note1_h: "Computed from the source",
-    n1a: "Every coordinate, width and spacing is read straight from the <code>display:</code> lambda \u2014 no number was nudged to make it look better.",
-    n1b: "<b>Lines</b> use Bresenham and <b>circles</b> the midpoint algorithm, the way ESPHome does it. The weather icons are the same layers of circles, rectangles and strokes.",
-    n1c: "<b>The text is 1-bit.</b> Every letter is rendered and thresholded to on or off, exactly as <code>bpp: 1</code> does on the device. No antialiasing, no halftones.",
-    n1d: "The typefaces are the same: <b>Inter</b> 700/600 and <b>JetBrains Mono</b> 400, in the five sizes the YAML defines.",
-    n1e: "The framebuffer holds one of six color indices per pixel. A gray tone is physically impossible to get into the image.",
-    n1f: "The labels on the panel itself are Norwegian because the firmware draws them that way. The language switch above changes the page around the panel, never the panel.",
-    note2_h: "Approximate",
-    n2a: "<b>The color values</b> under \u201Chow the panel looks\u201D are my estimate of how the Spectra 6 pigments read in ordinary room light. Real panel colors shift with lighting and viewing angle. Switch to \u201Craw RGB\u201D for the values the YAML actually sets.",
-    n2b: "<b>Text placement</b> can be a pixel or two off: the browser and ESPHome derive font height slightly differently.",
-    n2c: "<b>Paper texture and glare</b> sit as a layer on top of the image to imitate the matte surface. They never touch the pixels.",
-    n2d: "<b>The frame</b> is a neutral illustration, not a rendering of the enclosure.",
-    n2e: "The refresh animation is compressed from ~18 seconds to about four.",
-    footer: "Source: seeed-1002-dashboard.yaml, lines 574\u2013913 \u00B7 aisenseapi/reterminal-e1002-esphome-tagent @ c31896e"
+  var TR = {
+    en: {
+      h1: "E1002 Panel View",
+      lede: "The entire drawing lambda from the ESPHome configuration has been ported to this page \u2014 the same coordinates, the same drawing primitives, the same six panel colors. What you see below is not a sketch of the layout; it is the layout, computed pixel by pixel.",
+      spec1: "<b>800 \u00D7 480</b> pixels",
+      spec2: "Spectra 6 \u2014 <b>6 colors</b>",
+      spec3: "No grays",
+      spec4: "1-bit fonts",
+      spec5: "Full refresh <b>~18 s</b>",
+      lbl_mode: "Colors",
+      mode_panel: "How the panel looks",
+      mode_rgb: "Raw RGB",
+      lbl_zoom: "Zoom",
+      realism: "Paper texture and glare",
+      cap1: "Example data from data-feed-example.json \u2014 no live provider is connected yet",
+      cap2: "The frame around it is illustration only",
+      h2_palette: "The panel's six colors",
+      callout: "<b>Note: the panel has six colors, not seven.</b> Spectra 6 (E6) gives black, white, red, yellow, green and blue. The older ACeP panels had seven by adding orange. The YAML defines exactly these six as <code>Color</code> constants, and no other value can reach the screen \u2014 which is why this rendering stores nothing but a color index 0\u20135 per pixel.",
+      h2_fidelity: "What is exact and what is an estimate",
+      note1_h: "Computed from the source",
+      n1a: "Every coordinate, width and spacing is read straight from the <code>display:</code> lambda \u2014 no number was nudged to make it look better.",
+      n1b: "<b>Lines</b> use Bresenham and <b>circles</b> the midpoint algorithm, the way ESPHome does it. The weather icons are the same layers of circles, rectangles and strokes.",
+      n1c: "<b>The text is 1-bit.</b> Every letter is rendered and thresholded to on or off, exactly as <code>bpp: 1</code> does on the device. No antialiasing, no halftones.",
+      n1d: "The typefaces are the same: <b>Inter</b> 700/600 and <b>JetBrains Mono</b> 400, in the five sizes the YAML defines.",
+      n1e: "The framebuffer holds one of six color indices per pixel. A gray tone is physically impossible to get into the image.",
+      n1f: "The labels on the panel itself are Norwegian because the firmware draws them that way. The language switch above changes the page around the panel, never the panel.",
+      note2_h: "Approximate",
+      n2a: "<b>The color values</b> under \u201Chow the panel looks\u201D are my estimate of how the Spectra 6 pigments read in ordinary room light. Real panel colors shift with lighting and viewing angle. Switch to \u201Craw RGB\u201D for the values the YAML actually sets.",
+      n2b: "<b>Text placement</b> can be a pixel or two off: the browser and ESPHome derive font height slightly differently.",
+      n2c: "<b>Paper texture and glare</b> sit as a layer on top of the image to imitate the matte surface. They never touch the pixels.",
+      n2d: "<b>The frame</b> is a neutral illustration, not a rendering of the enclosure.",
+      n2e: "The refresh animation is compressed from ~18 seconds to about four.",
+      footer: "Source: seeed-1002-dashboard.yaml, lines 574\u2013913 \u00B7 aisenseapi/reterminal-e1002-esphome-tagent @ c31896e"
+    },
+    pt: {
+      h1: "Vista do painel E1002",
+      lede: "Toda a lambda de desenho da configura\u00E7\u00E3o ESPHome foi portada para esta p\u00E1gina \u2014 as mesmas coordenadas, as mesmas primitivas de desenho, as mesmas seis cores do painel. O que v\u00EA abaixo n\u00E3o \u00E9 um esbo\u00E7o do layout; \u00E9 o layout, calculado pixel a pixel.",
+      spec1: "<b>800 \u00D7 480</b> pixels",
+      spec2: "Spectra 6 \u2014 <b>6 cores</b>",
+      spec3: "Sem cinzentos",
+      spec4: "Tipos de letra de 1 bit",
+      spec5: "Atualiza\u00E7\u00E3o completa <b>~18 s</b>",
+      lbl_mode: "Cores",
+      mode_panel: "Aspeto real do painel",
+      mode_rgb: "RGB puro",
+      lbl_zoom: "Zoom",
+      realism: "Textura de papel e reflexo",
+      cap1: "Dados de exemplo de data-feed-example.json \u2014 ainda n\u00E3o h\u00E1 fornecedor em direto ligado",
+      cap2: "A moldura em redor \u00E9 apenas ilustrativa",
+      h2_palette: "As seis cores do painel",
+      callout: "<b>Nota: o painel tem seis cores, n\u00E3o sete.</b> O Spectra 6 (E6) d\u00E1 preto, branco, vermelho, amarelo, verde e azul. Os pain\u00E9is ACeP mais antigos tinham sete, acrescentando laranja. O YAML define exatamente estas seis como constantes <code>Color</code>, e nenhum outro valor chega ao painel \u2014 por isso esta renderiza\u00E7\u00E3o guarda apenas um \u00EDndice de cor 0\u20135 por pixel.",
+      h2_fidelity: "O que \u00E9 exato e o que \u00E9 estimativa",
+      note1_h: "Calculado a partir do c\u00F3digo",
+      n1a: "Todas as coordenadas, larguras e dist\u00E2ncias s\u00E3o lidas diretamente da lambda <code>display:</code> \u2014 nenhum n\u00FAmero foi ajustado para ficar mais bonito.",
+      n1b: "As <b>linhas</b> usam Bresenham e os <b>c\u00EDrculos</b> o algoritmo do ponto m\u00E9dio, tal como o ESPHome faz. Os \u00EDcones de tempo s\u00E3o as mesmas camadas de c\u00EDrculos, ret\u00E2ngulos e tra\u00E7os.",
+      n1c: "<b>O texto \u00E9 de 1 bit.</b> Cada letra \u00E9 desenhada e limiarizada para ligado ou desligado, tal como <code>bpp: 1</code> faz no dispositivo. Sem suaviza\u00E7\u00E3o, sem meios-tons.",
+      n1d: "Os tipos de letra s\u00E3o os mesmos: <b>Inter</b> 700/600 e <b>JetBrains Mono</b> 400, nos cinco tamanhos que o YAML define.",
+      n1e: "O framebuffer guarda um de seis \u00EDndices de cor por pixel. Um tom de cinzento \u00E9 fisicamente imposs\u00EDvel de colocar na imagem.",
+      n1f: "As legendas no pr\u00F3prio painel est\u00E3o em noruegu\u00EAs porque \u00E9 assim que o firmware as desenha. O seletor de idioma acima muda a p\u00E1gina \u00E0 volta do painel, nunca o painel.",
+      note2_h: "Aproximado",
+      n2a: "<b>Os valores de cor</b> em \u00ABaspeto real do painel\u00BB s\u00E3o a minha estimativa de como os pigmentos Spectra 6 se leem com luz interior normal. As cores reais do painel variam com a ilumina\u00E7\u00E3o e o \u00E2ngulo. Mude para \u00ABRGB puro\u00BB para ver os valores que o YAML define de facto.",
+      n2b: "<b>A posi\u00E7\u00E3o do texto</b> pode variar um ou dois pixels: o browser e o ESPHome calculam a altura da fonte de forma ligeiramente diferente.",
+      n2c: "<b>A textura de papel e o reflexo</b> s\u00E3o uma camada por cima da imagem, para imitar a superf\u00EDcie mate. Nunca tocam nos pixels.",
+      n2d: "<b>A moldura</b> \u00E9 uma ilustra\u00E7\u00E3o neutra, n\u00E3o uma reprodu\u00E7\u00E3o da caixa.",
+      n2e: "A anima\u00E7\u00E3o de atualiza\u00E7\u00E3o est\u00E1 comprimida de ~18 segundos para cerca de quatro.",
+      footer: "Fonte: seeed-1002-dashboard.yaml, linhas 574\u2013913 \u00B7 aisenseapi/reterminal-e1002-esphome-tagent @ c31896e"
+    },
+    zh: {
+      h1: "E1002 \u9762\u677F\u9884\u89C8",
+      lede: "ESPHome \u914D\u7F6E\u91CC\u7684\u6574\u4E2A\u7ED8\u5236 lambda \u5DF2\u79FB\u690D\u5230\u672C\u9875\u9762\u2014\u2014\u76F8\u540C\u7684\u5750\u6807\u3001\u76F8\u540C\u7684\u7ED8\u56FE\u539F\u8BED\u3001\u76F8\u540C\u7684\u516D\u79CD\u9762\u677F\u989C\u8272\u3002\u4E0B\u9762\u770B\u5230\u7684\u4E0D\u662F\u5E03\u5C40\u8349\u56FE\uFF0C\u800C\u662F\u5E03\u5C40\u672C\u8EAB\uFF0C\u9010\u50CF\u7D20\u8BA1\u7B97\u800C\u6210\u3002",
+      spec1: "<b>800 \u00D7 480</b> \u50CF\u7D20",
+      spec2: "Spectra 6 \u2014 <b>6 \u8272</b>",
+      spec3: "\u65E0\u7070\u9636",
+      spec4: "1 \u4F4D\u5B57\u4F53",
+      spec5: "\u6574\u5C4F\u5237\u65B0 <b>\u7EA6 18 \u79D2</b>",
+      lbl_mode: "\u989C\u8272",
+      mode_panel: "\u9762\u677F\u5B9E\u9645\u89C2\u611F",
+      mode_rgb: "\u7EAF RGB",
+      lbl_zoom: "\u7F29\u653E",
+      realism: "\u7EB8\u5F20\u7EB9\u7406\u4E0E\u53CD\u5149",
+      cap1: "\u793A\u4F8B\u6570\u636E\u6765\u81EA data-feed-example.json \u2014 \u5C1A\u672A\u63A5\u5165\u5B9E\u65F6\u6570\u636E\u6E90",
+      cap2: "\u5916\u6846\u4EC5\u4E3A\u793A\u610F",
+      h2_palette: "\u9762\u677F\u7684\u516D\u79CD\u989C\u8272",
+      callout: "<b>\u6CE8\u610F\uFF1A\u9762\u677F\u662F\u516D\u8272\uFF0C\u4E0D\u662F\u4E03\u8272\u3002</b>Spectra 6\uFF08E6\uFF09\u63D0\u4F9B\u9ED1\u3001\u767D\u3001\u7EA2\u3001\u9EC4\u3001\u7EFF\u3001\u84DD\u3002\u66F4\u65E9\u7684 ACeP \u9762\u677F\u52A0\u4E0A\u6A59\u8272\u5171\u4E03\u8272\u3002YAML \u6B63\u662F\u628A\u8FD9\u516D\u79CD\u5B9A\u4E49\u4E3A <code>Color</code> \u5E38\u91CF\uFF0C\u5176\u4ED6\u4EFB\u4F55\u6570\u503C\u90FD\u65E0\u6CD5\u9001\u5230\u9762\u677F\u2014\u2014\u56E0\u6B64\u8FD9\u91CC\u7684\u6E32\u67D3\u6BCF\u4E2A\u50CF\u7D20\u53EA\u5B58\u4E00\u4E2A 0\u20135 \u7684\u989C\u8272\u7D22\u5F15\u3002",
+      h2_fidelity: "\u54EA\u4E9B\u662F\u7CBE\u786E\u7684\uFF0C\u54EA\u4E9B\u662F\u4F30\u8BA1\u7684",
+      note1_h: "\u7531\u6E90\u7801\u8BA1\u7B97\u5F97\u51FA",
+      n1a: "\u6240\u6709\u5750\u6807\u3001\u5BBD\u5EA6\u548C\u95F4\u8DDD\u90FD\u76F4\u63A5\u8BFB\u81EA <code>display:</code> lambda\u2014\u2014\u6CA1\u6709\u4E3A\u4E86\u597D\u770B\u800C\u8C03\u6574\u4EFB\u4F55\u6570\u503C\u3002",
+      n1b: "<b>\u76F4\u7EBF</b>\u7528 Bresenham \u7B97\u6CD5\uFF0C<b>\u5706</b>\u7528\u4E2D\u70B9\u7B97\u6CD5\uFF0C\u548C ESPHome \u4E00\u6837\u3002\u5929\u6C14\u56FE\u6807\u662F\u540C\u6837\u7684\u5706\u5F62\u3001\u77E9\u5F62\u548C\u7EBF\u6761\u53E0\u52A0\u800C\u6210\u3002",
+      n1c: "<b>\u6587\u5B57\u662F 1 \u4F4D\u7684\u3002</b>\u6BCF\u4E2A\u5B57\u5F62\u90FD\u7ECF\u8FC7\u6E32\u67D3\u5E76\u4E8C\u503C\u5316\u4E3A\u5F00\u6216\u5173\uFF0C\u4E0E\u8BBE\u5907\u4E0A\u7684 <code>bpp: 1</code> \u5B8C\u5168\u4E00\u81F4\u3002\u6CA1\u6709\u6297\u952F\u9F7F\uFF0C\u6CA1\u6709\u534A\u8272\u8C03\u3002",
+      n1d: "\u5B57\u4F53\u4E5F\u76F8\u540C\uFF1A<b>Inter</b> 700/600 \u548C <b>JetBrains Mono</b> 400\uFF0C\u4F7F\u7528 YAML \u5B9A\u4E49\u7684\u4E94\u79CD\u5B57\u53F7\u3002",
+      n1e: "\u5E27\u7F13\u51B2\u6BCF\u4E2A\u50CF\u7D20\u53EA\u4FDD\u5B58\u516D\u4E2A\u989C\u8272\u7D22\u5F15\u4E4B\u4E00\u3002\u7070\u9636\u5728\u7269\u7406\u4E0A\u4E0D\u53EF\u80FD\u8FDB\u5165\u753B\u9762\u3002",
+      n1f: "\u9762\u677F\u4E0A\u7684\u6587\u5B57\u662F\u632A\u5A01\u8BED\uFF0C\u56E0\u4E3A\u56FA\u4EF6\u5C31\u662F\u8FD9\u6837\u7ED8\u5236\u7684\u3002\u4E0A\u65B9\u7684\u8BED\u8A00\u5207\u6362\u53EA\u6539\u53D8\u9762\u677F\u5468\u56F4\u7684\u9875\u9762\uFF0C\u4ECE\u4E0D\u6539\u53D8\u9762\u677F\u672C\u8EAB\u3002",
+      note2_h: "\u8FD1\u4F3C\u4E4B\u5904",
+      n2a: "\u300C\u9762\u677F\u5B9E\u9645\u89C2\u611F\u300D\u4E2D\u7684<b>\u989C\u8272\u503C</b>\u662F\u6211\u5BF9 Spectra 6 \u989C\u6599\u5728\u666E\u901A\u5BA4\u5185\u5149\u4E0B\u89C2\u611F\u7684\u4F30\u8BA1\u3002\u771F\u5B9E\u9762\u677F\u989C\u8272\u4F1A\u968F\u5149\u7167\u548C\u89C6\u89D2\u53D8\u5316\u3002\u5207\u6362\u5230\u300C\u7EAF RGB\u300D\u53EF\u770B\u5230 YAML \u5B9E\u9645\u8BBE\u5B9A\u7684\u6570\u503C\u3002",
+      n2b: "<b>\u6587\u5B57\u4F4D\u7F6E</b>\u53EF\u80FD\u76F8\u5DEE\u4E00\u4E24\u4E2A\u50CF\u7D20\uFF1A\u6D4F\u89C8\u5668\u4E0E ESPHome \u8BA1\u7B97\u5B57\u4F53\u9AD8\u5EA6\u7684\u65B9\u5F0F\u7565\u6709\u4E0D\u540C\u3002",
+      n2c: "<b>\u7EB8\u5F20\u7EB9\u7406\u4E0E\u53CD\u5149</b>\u662F\u53E0\u5728\u753B\u9762\u4E4B\u4E0A\u7684\u4E00\u5C42\uFF0C\u7528\u6765\u6A21\u62DF\u54D1\u5149\u8868\u9762\u3002\u5B83\u4EEC\u4ECE\u4E0D\u6539\u52A8\u50CF\u7D20\u3002",
+      n2d: "<b>\u5916\u6846</b>\u662F\u4E2D\u6027\u793A\u610F\uFF0C\u5E76\u975E\u673A\u58F3\u7684\u8FD8\u539F\u3002",
+      n2e: "\u5237\u65B0\u52A8\u753B\u4ECE\u7EA6 18 \u79D2\u538B\u7F29\u5230\u4E86\u56DB\u79D2\u5DE6\u53F3\u3002",
+      footer: "\u6765\u6E90\uFF1Aseeed-1002-dashboard.yaml\uFF0C\u7B2C 574\u2013913 \u884C \u00B7 aisenseapi/reterminal-e1002-esphome-tagent @ c31896e"
+    }
   };
+;
 
   function collectBase(){
     var els = document.querySelectorAll("[data-i18n]");
     for (var i = 0; i < els.length; i++) BASE[els[i].getAttribute("data-i18n")] = els[i].innerHTML;
   }
 
+  var LANGS = ["no", "en", "pt", "zh"];
+  var LANG_CODE = {no: "nb", en: "en", pt: "pt", zh: "zh-Hans"};
+
   function applyLang(){
-    var dict = (lang === "en") ? EN : BASE;
+    var dict = TR[lang] || BASE;
     var els = document.querySelectorAll("[data-i18n]");
     for (var i = 0; i < els.length; i++){
       var key = els[i].getAttribute("data-i18n");
@@ -973,13 +1089,17 @@
       if (value == null) value = BASE[key];
       if (value != null) els[i].innerHTML = value;
     }
-    document.documentElement.lang = (lang === "en") ? "en" : "nb";
+    document.documentElement.lang = LANG_CODE[lang];
+    document.documentElement.setAttribute("data-lang", lang);
     canvas.setAttribute("aria-label", STR[lang].canvasAlt);
-    document.getElementById("lang-no").setAttribute("aria-pressed", String(lang === "no"));
-    document.getElementById("lang-en").setAttribute("aria-pressed", String(lang === "en"));
+    for (var k = 0; k < LANGS.length; k++){
+      document.getElementById("lang-" + LANGS[k])
+        .setAttribute("aria-pressed", String(LANGS[k] === lang));
+    }
     if (!busy) refreshBtn.textContent = STR[lang].refreshIdle;
     buildSwatches();
   }
+
 
   function setLang(next){
     lang = next;
@@ -987,11 +1107,12 @@
     applyLang();
   }
 
-  document.getElementById("lang-no").addEventListener("click", function(){ setLang("no"); });
-  document.getElementById("lang-en").addEventListener("click", function(){ setLang("en"); });
+  LANGS.forEach(function(code){
+    document.getElementById("lang-" + code).addEventListener("click", function(){ setLang(code); });
+  });
   try {
     var savedLang = localStorage.getItem("e1002-lang");
-    if (savedLang === "en" || savedLang === "no") lang = savedLang;
+    if (LANGS.indexOf(savedLang) !== -1) lang = savedLang;
   } catch (e) {}
 
   /* ---------- controls ---------- */

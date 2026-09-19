@@ -19,6 +19,10 @@ without antialiasing, and a framebuffer that can only hold the panel's six color
 example values from `data-feed-example.json` and can switch between the muted Spectra 6 pigments and
 the raw RGB constants the YAML sets.
 
+The page reads in Norwegian by default, with English, Portuguese and Chinese a click away at the
+top. The panel inside it stays Norwegian in every language, because those labels are drawn by the
+firmware rather than by the page.
+
 Viewing it needs nothing but a browser:
 
 - <https://htmlpreview.github.io/?https://github.com/aisenseapi/reterminal-e1002-esphome-tagent/blob/main/docs/index.html>
