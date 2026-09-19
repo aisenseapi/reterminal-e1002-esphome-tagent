@@ -117,6 +117,21 @@
   }
   .specs b{color:var(--ink);font-weight:500;}
 
+  /* ---- language bar ---- */
+  .langbar{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    flex-wrap:wrap;
+    gap:8px 12px;
+    padding:9px 14px;
+    background:var(--surface);
+    border:1px solid var(--rule);
+    border-radius:4px;
+  }
+  .langbar .seg button{padding:7px 17px;font-size:12.5px;}
+  .langbar :is(button,input):focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+
   /* ---- controls ---- */
   .controls{
     display:flex;
@@ -308,29 +323,37 @@
 </head>
 <body>
 <div class="wrap">
+  <div class="langbar">
+    <span class="ctl-label" lang="nb">Spr&#xE5;k</span><span class="ctl-label" lang="en">/ Language</span>
+    <div class="seg" role="group" aria-label="Spr&#xE5;k / Language">
+      <button type="button" id="lang-no" lang="nb" aria-pressed="true">Norsk</button>
+      <button type="button" id="lang-en" lang="en" aria-pressed="false">English</button>
+    </div>
+  </div>
+
   <header>
     <p class="eyebrow">reTerminal E1002 &#xB7; seeed-1002-dashboard.yaml</p>
-    <h1>E1002 Panelvisning</h1>
-    <p class="lede">Hele tegne-lambdaen fra ESPHome-konfigurasjonen er portet til denne siden &#x2014; samme koordinater, samme tegneprimitiver og samme seks panelfarger. Bildet under er ikke en skisse av layouten; det er layouten, regnet ut piksel for piksel.</p>
+    <h1 data-i18n="h1">E1002 Panelvisning</h1>
+    <p class="lede" data-i18n="lede">Hele tegne-lambdaen fra ESPHome-konfigurasjonen er portet til denne siden &#x2014; samme koordinater, samme tegneprimitiver og samme seks panelfarger. Bildet under er ikke en skisse av layouten; det er layouten, regnet ut piksel for piksel.</p>
     <ul class="specs">
-      <li><b>800 &#xD7; 480</b> piksler</li>
-      <li>Spectra 6 &#x2014; <b>6 farger</b></li>
-      <li>Ingen gr&#xE5;toner</li>
-      <li>1-bits fonter</li>
-      <li>Full oppdatering <b>~18 s</b></li>
+      <li data-i18n="spec1"><b>800 &#xD7; 480</b> piksler</li>
+      <li data-i18n="spec2">Spectra 6 &#x2014; <b>6 farger</b></li>
+      <li data-i18n="spec3">Ingen gr&#xE5;toner</li>
+      <li data-i18n="spec4">1-bits fonter</li>
+      <li data-i18n="spec5">Full oppdatering <b>~18 s</b></li>
     </ul>
   </header>
 
   <div class="controls">
     <div class="ctl">
-      <span class="ctl-label" id="lbl-mode">Farger</span>
+      <span class="ctl-label" id="lbl-mode" data-i18n="lbl_mode">Farger</span>
       <div class="seg" role="group" aria-labelledby="lbl-mode">
-        <button type="button" id="mode-panel" data-mode="panel" aria-pressed="true">Slik panelet ser ut</button>
-        <button type="button" id="mode-rgb" data-mode="rgb" aria-pressed="false">Ren RGB</button>
+        <button type="button" id="mode-panel" data-mode="panel" data-i18n="mode_panel" aria-pressed="true">Slik panelet ser ut</button>
+        <button type="button" id="mode-rgb" data-mode="rgb" data-i18n="mode_rgb" aria-pressed="false">Ren RGB</button>
       </div>
     </div>
     <div class="ctl">
-      <span class="ctl-label" id="lbl-zoom">Zoom</span>
+      <span class="ctl-label" id="lbl-zoom" data-i18n="lbl_zoom">Zoom</span>
       <div class="seg" role="group" aria-labelledby="lbl-zoom">
         <button type="button" id="zoom-1" data-zoom="1" aria-pressed="true">1&#xD7;</button>
         <button type="button" id="zoom-2" data-zoom="2" aria-pressed="false">2&#xD7;</button>
@@ -338,7 +361,7 @@
     </div>
     <label class="switch" for="realism">
       <input type="checkbox" id="realism" checked>
-      Papirstruktur og lysrefleks
+      <span data-i18n="realism">Papirstruktur og lysrefleks</span>
     </label>
     <button type="button" class="btn" id="refresh">Spill av full oppdatering</button>
   </div>
@@ -356,46 +379,47 @@
       </div>
     </div>
     <p class="caption">
-      <span>Eksempeldata fra data-feed-example.json &#x2014; ingen live-leverand&#xF8;r er koblet til enn&#xE5;</span>
-      <span>Rammen rundt er kun illustrasjon</span>
+      <span data-i18n="cap1">Eksempeldata fra data-feed-example.json &#x2014; ingen live-leverand&#xF8;r er koblet til enn&#xE5;</span>
+      <span data-i18n="cap2">Rammen rundt er kun illustrasjon</span>
     </p>
   </div>
 
   <section class="section">
-    <h2>Panelets seks farger</h2>
+    <h2 data-i18n="h2_palette">Panelets seks farger</h2>
     <div class="swatches" id="swatches"></div>
-    <div class="callout">
+    <div class="callout" data-i18n="callout">
       <b>Merk: panelet har seks farger, ikke sju.</b> Spectra 6 (E6) gir svart, hvitt, r&#xF8;dt, gult, gr&#xF8;nt og bl&#xE5;tt. De eldre ACeP-panelene hadde sju ved &#xE5; legge til oransje. YAML-en definerer n&#xF8;yaktig disse seks som <code>Color</code>-konstanter, og ingen annen verdi kan n&#xE5; skjermen &#x2014; derfor lagrer gjengivelsen her bare en fargeindeks 0&#x2013;5 per piksel.
     </div>
   </section>
 
   <section class="section">
-    <h2>Hva som er ekte og hva som er anslag</h2>
+    <h2 data-i18n="h2_fidelity">Hva som er ekte og hva som er anslag</h2>
     <div class="notes">
       <div class="note">
-        <h3>Regnet ut fra kildekoden</h3>
+        <h3 data-i18n="note1_h">Regnet ut fra kildekoden</h3>
         <ul>
-          <li>Alle koordinater, bredder og avstander er lest rett fra <code>display:</code>-lambdaen &#x2014; ingen tall er justert for &#xE5; se penere ut.</li>
-          <li><b>Linjer</b> tegnes med Bresenham og <b>sirkler</b> med midtpunktalgoritmen, slik ESPHome gj&#xF8;r det. V&#xE6;rikonene er de samme lagene av sirkler, rektangler og streker.</li>
-          <li><b>Teksten er 1-bits.</b> Hver bokstav rendres og terskles til av/p&#xE5;, akkurat som <code>bpp: 1</code> p&#xE5; enheten. Ingen kantutjevning, ingen halvtoner.</li>
-          <li>Skriftene er de samme: <b>Inter</b> 700/600 og <b>JetBrains Mono</b> 400, i de fem st&#xF8;rrelsene YAML-en definerer.</li>
-          <li>Rammebufferet holder &#xE9;n av seks fargeindekser per piksel. En gr&#xE5;tone er fysisk umulig &#xE5; f&#xE5; inn i bildet.</li>
+          <li data-i18n="n1a">Alle koordinater, bredder og avstander er lest rett fra <code>display:</code>-lambdaen &#x2014; ingen tall er justert for &#xE5; se penere ut.</li>
+          <li data-i18n="n1b"><b>Linjer</b> tegnes med Bresenham og <b>sirkler</b> med midtpunktalgoritmen, slik ESPHome gj&#xF8;r det. V&#xE6;rikonene er de samme lagene av sirkler, rektangler og streker.</li>
+          <li data-i18n="n1c"><b>Teksten er 1-bits.</b> Hver bokstav rendres og terskles til av/p&#xE5;, akkurat som <code>bpp: 1</code> p&#xE5; enheten. Ingen kantutjevning, ingen halvtoner.</li>
+          <li data-i18n="n1d">Skriftene er de samme: <b>Inter</b> 700/600 og <b>JetBrains Mono</b> 400, i de fem st&#xF8;rrelsene YAML-en definerer.</li>
+          <li data-i18n="n1e">Rammebufferet holder &#xE9;n av seks fargeindekser per piksel. En gr&#xE5;tone er fysisk umulig &#xE5; f&#xE5; inn i bildet.</li>
+          <li data-i18n="n1f">Teksten p&#xE5; selve panelet er norsk fordi firmwaren tegner den slik. Spr&#xE5;kvalget over endrer siden rundt panelet, aldri panelet.</li>
         </ul>
       </div>
       <div class="note">
-        <h3>Tiln&#xE6;rmet</h3>
+        <h3 data-i18n="note2_h">Tiln&#xE6;rmet</h3>
         <ul>
-          <li><b>Fargeverdiene</b> i &#xAB;slik panelet ser ut&#xBB; er mitt anslag p&#xE5; hvordan Spectra 6-pigmentene leses av i vanlig romlys. Ekte panelfarger varierer med belysning og synsvinkel. Bytt til &#xAB;ren RGB&#xBB; for verdiene YAML-en faktisk setter.</li>
-          <li><b>Tekstplassering</b> kan avvike ett par piksler: nettleseren og ESPHome regner ut fonth&#xF8;yde p&#xE5; litt ulikt vis.</li>
-          <li><b>Papirstruktur og lysrefleks</b> ligger som et lag opp&#xE5; bildet for &#xE5; etterligne den matte overflaten. De r&#xF8;rer ikke pikslene.</li>
-          <li><b>Rammen</b> er en n&#xF8;ytral illustrasjon, ikke en gjengivelse av kabinettet.</li>
-          <li>Oppdateringsanimasjonen er komprimert fra ~18 sekunder til rundt fire.</li>
+          <li data-i18n="n2a"><b>Fargeverdiene</b> i &#xAB;slik panelet ser ut&#xBB; er mitt anslag p&#xE5; hvordan Spectra 6-pigmentene leses av i vanlig romlys. Ekte panelfarger varierer med belysning og synsvinkel. Bytt til &#xAB;ren RGB&#xBB; for verdiene YAML-en faktisk setter.</li>
+          <li data-i18n="n2b"><b>Tekstplassering</b> kan avvike ett par piksler: nettleseren og ESPHome regner ut fonth&#xF8;yde p&#xE5; litt ulikt vis.</li>
+          <li data-i18n="n2c"><b>Papirstruktur og lysrefleks</b> ligger som et lag opp&#xE5; bildet for &#xE5; etterligne den matte overflaten. De r&#xF8;rer ikke pikslene.</li>
+          <li data-i18n="n2d"><b>Rammen</b> er en n&#xF8;ytral illustrasjon, ikke en gjengivelse av kabinettet.</li>
+          <li data-i18n="n2e">Oppdateringsanimasjonen er komprimert fra ~18 sekunder til rundt fire.</li>
         </ul>
       </div>
     </div>
   </section>
 
-  <footer>Kilde: seeed-1002-dashboard.yaml, linje 574&#x2013;913 &#xB7; aisenseapi/reterminal-e1002-esphome-tagent @ c31896e</footer>
+  <footer data-i18n="footer">Kilde: seeed-1002-dashboard.yaml, linje 574&#x2013;913 &#xB7; aisenseapi/reterminal-e1002-esphome-tagent @ c31896e</footer>
 </div>
 
 <script>
@@ -409,14 +433,37 @@
     panel: ["#31302c", "#d8d5ca", "#9b3a30", "#c8a733", "#4f6b3c", "#334a6e"],
     rgb:   ["#000000", "#ffffff", "#ff0000", "#ffff00", "#00ff00", "#0000ff"]
   };
-  var SWATCH_META = [
-    { name: "Svart",  use: "Tekst, skillelinjer, ikonkonturer" },
-    { name: "Hvit",   use: "Bakgrunn og innsiden av skyene" },
-    { name: "R\u00F8d",    use: "Temperaturgrad, kursfall, feilmelding" },
-    { name: "Gul",    use: "Sol, solstr\u00E5ler og lynet" },
-    { name: "Gr\u00F8nn",  use: "Ikonbokser, kursoppgang, m\u00E5nens skygge" },
-    { name: "Bl\u00E5",    use: "Regn, sn\u00F8, t\u00E5ke, luftfuktighet, lave temperaturer" }
-  ];
+  // Strings the script writes itself. Everything else lives in the markup and is
+  // swapped through data-i18n. The panel is absent from both on purpose: its
+  // labels come from the firmware, so they stay Norwegian in every language.
+  var STR = {
+    no: {
+      refreshIdle: "Spill av full oppdatering",
+      refreshBusy: "Oppdaterer \u2026",
+      canvasAlt: "reTerminal E1002 ePaper-dashbord: v\u00E6r, \u00E5tte-timers graf, fem dagers varsel, markedskolonne og ni byer.",
+      swatch: [
+        ["Svart",  "Tekst, skillelinjer, ikonkonturer"],
+        ["Hvit",   "Bakgrunn og innsiden av skyene"],
+        ["R\u00F8d",    "Temperaturgrad, kursfall, feilmelding"],
+        ["Gul",    "Sol, solstr\u00E5ler og lynet"],
+        ["Gr\u00F8nn",  "Ikonbokser, kursoppgang, m\u00E5nens skygge"],
+        ["Bl\u00E5",    "Regn, sn\u00F8, t\u00E5ke, luftfuktighet, lave temperaturer"]
+      ]
+    },
+    en: {
+      refreshIdle: "Play a full refresh",
+      refreshBusy: "Refreshing \u2026",
+      canvasAlt: "reTerminal E1002 ePaper dashboard: weather, an eight-hour chart, a five-day forecast, a market column and nine cities.",
+      swatch: [
+        ["Black",  "Text, dividers, icon outlines"],
+        ["White",  "Background and the inside of the clouds"],
+        ["Red",    "Degree sign, falling prices, error message"],
+        ["Yellow", "Sun, sun rays and the lightning bolt"],
+        ["Green",  "Icon boxes, rising prices, the moon\u2019s shadow"],
+        ["Blue",   "Rain, snow, fog, humidity, low temperatures"]
+      ]
+    }
+  };
 
   var DATA = {
     wx_loc: "Aker brygge, Oslo",
@@ -834,7 +881,7 @@
   function buildSwatches(){
     var host = document.getElementById("swatches");
     host.textContent = "";
-    SWATCH_META.forEach(function(meta, i){
+    STR[lang].swatch.forEach(function(meta, i){
       var cell = document.createElement("div");
       cell.className = "sw";
       var chip = document.createElement("div");
@@ -844,13 +891,13 @@
       body.className = "sw-body";
       var name = document.createElement("div");
       name.className = "sw-name";
-      name.textContent = meta.name;
+      name.textContent = meta[0];
       var hex = document.createElement("div");
       hex.className = "sw-hex";
       hex.textContent = PALETTES[mode][i].toUpperCase();
       var use = document.createElement("div");
       use.className = "sw-use";
-      use.textContent = meta.use;
+      use.textContent = meta[1];
       body.appendChild(name); body.appendChild(hex); body.appendChild(use);
       cell.appendChild(chip); cell.appendChild(body);
       host.appendChild(cell);
@@ -871,6 +918,81 @@
     nc.putImageData(nd, 0, 0);
     document.getElementById("grain").style.backgroundImage = "url(" + n.toDataURL() + ")";
   }
+
+  /* ---------- language ---------- */
+
+  // Norwegian is the default and lives in the markup; English is swapped in over
+  // it. BASE keeps the markup as authored, so switching back is lossless.
+  var lang = "no";
+  var BASE = {};
+  var EN = {
+    h1: "E1002 Panel View",
+    lede: "The entire drawing lambda from the ESPHome configuration has been ported to this page \u2014 the same coordinates, the same drawing primitives, the same six panel colors. What you see below is not a sketch of the layout; it is the layout, computed pixel by pixel.",
+    spec1: "<b>800 \u00D7 480</b> pixels",
+    spec2: "Spectra 6 \u2014 <b>6 colors</b>",
+    spec3: "No grays",
+    spec4: "1-bit fonts",
+    spec5: "Full refresh <b>~18 s</b>",
+    lbl_mode: "Colors",
+    mode_panel: "How the panel looks",
+    mode_rgb: "Raw RGB",
+    lbl_zoom: "Zoom",
+    realism: "Paper texture and glare",
+    cap1: "Example data from data-feed-example.json \u2014 no live provider is connected yet",
+    cap2: "The frame around it is illustration only",
+    h2_palette: "The panel's six colors",
+    callout: "<b>Note: the panel has six colors, not seven.</b> Spectra 6 (E6) gives black, white, red, yellow, green and blue. The older ACeP panels had seven by adding orange. The YAML defines exactly these six as <code>Color</code> constants, and no other value can reach the screen \u2014 which is why this rendering stores nothing but a color index 0\u20135 per pixel.",
+    h2_fidelity: "What is exact and what is an estimate",
+    note1_h: "Computed from the source",
+    n1a: "Every coordinate, width and spacing is read straight from the <code>display:</code> lambda \u2014 no number was nudged to make it look better.",
+    n1b: "<b>Lines</b> use Bresenham and <b>circles</b> the midpoint algorithm, the way ESPHome does it. The weather icons are the same layers of circles, rectangles and strokes.",
+    n1c: "<b>The text is 1-bit.</b> Every letter is rendered and thresholded to on or off, exactly as <code>bpp: 1</code> does on the device. No antialiasing, no halftones.",
+    n1d: "The typefaces are the same: <b>Inter</b> 700/600 and <b>JetBrains Mono</b> 400, in the five sizes the YAML defines.",
+    n1e: "The framebuffer holds one of six color indices per pixel. A gray tone is physically impossible to get into the image.",
+    n1f: "The labels on the panel itself are Norwegian because the firmware draws them that way. The language switch above changes the page around the panel, never the panel.",
+    note2_h: "Approximate",
+    n2a: "<b>The color values</b> under \u201Chow the panel looks\u201D are my estimate of how the Spectra 6 pigments read in ordinary room light. Real panel colors shift with lighting and viewing angle. Switch to \u201Craw RGB\u201D for the values the YAML actually sets.",
+    n2b: "<b>Text placement</b> can be a pixel or two off: the browser and ESPHome derive font height slightly differently.",
+    n2c: "<b>Paper texture and glare</b> sit as a layer on top of the image to imitate the matte surface. They never touch the pixels.",
+    n2d: "<b>The frame</b> is a neutral illustration, not a rendering of the enclosure.",
+    n2e: "The refresh animation is compressed from ~18 seconds to about four.",
+    footer: "Source: seeed-1002-dashboard.yaml, lines 574\u2013913 \u00B7 aisenseapi/reterminal-e1002-esphome-tagent @ c31896e"
+  };
+
+  function collectBase(){
+    var els = document.querySelectorAll("[data-i18n]");
+    for (var i = 0; i < els.length; i++) BASE[els[i].getAttribute("data-i18n")] = els[i].innerHTML;
+  }
+
+  function applyLang(){
+    var dict = (lang === "en") ? EN : BASE;
+    var els = document.querySelectorAll("[data-i18n]");
+    for (var i = 0; i < els.length; i++){
+      var key = els[i].getAttribute("data-i18n");
+      var value = dict[key];
+      if (value == null) value = BASE[key];
+      if (value != null) els[i].innerHTML = value;
+    }
+    document.documentElement.lang = (lang === "en") ? "en" : "nb";
+    canvas.setAttribute("aria-label", STR[lang].canvasAlt);
+    document.getElementById("lang-no").setAttribute("aria-pressed", String(lang === "no"));
+    document.getElementById("lang-en").setAttribute("aria-pressed", String(lang === "en"));
+    if (!busy) refreshBtn.textContent = STR[lang].refreshIdle;
+    buildSwatches();
+  }
+
+  function setLang(next){
+    lang = next;
+    try { localStorage.setItem("e1002-lang", next); } catch (e) {}
+    applyLang();
+  }
+
+  document.getElementById("lang-no").addEventListener("click", function(){ setLang("no"); });
+  document.getElementById("lang-en").addEventListener("click", function(){ setLang("en"); });
+  try {
+    var savedLang = localStorage.getItem("e1002-lang");
+    if (savedLang === "en" || savedLang === "no") lang = savedLang;
+  } catch (e) {}
 
   /* ---------- controls ---------- */
 
@@ -914,7 +1036,7 @@
     if (reduce){ render(); paint(); return; }
     busy = true;
     refreshBtn.disabled = true;
-    refreshBtn.textContent = "Oppdaterer \u2026";
+    refreshBtn.textContent = STR[lang].refreshBusy;
     var pal = PALETTES[mode];
     var steps = [pal[1], pal[0], pal[1], pal[2], pal[3], pal[4], pal[5], pal[0], pal[1]];
     var step = 0;
@@ -930,7 +1052,7 @@
         flash.style.opacity = "0";
         busy = false;
         refreshBtn.disabled = false;
-        refreshBtn.textContent = "Spill av full oppdatering";
+        refreshBtn.textContent = STR[lang].refreshIdle;
       }
     }, 420);
   });
@@ -938,11 +1060,12 @@
   /* ---------- boot ---------- */
 
   function boot(){
+    collectBase();
     measureFonts();
     render();
     paint();
-    buildSwatches();
     buildGrain();
+    applyLang();
   }
 
   var faces = [
