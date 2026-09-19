@@ -21,9 +21,10 @@ the raw RGB constants the YAML sets.
 
 Viewing it needs nothing but a browser:
 
-- <https://raw.githack.com/aisenseapi/reterminal-e1002-esphome-tagent/main/docs/index.html>
+- <https://htmlpreview.github.io/?https://github.com/aisenseapi/reterminal-e1002-esphome-tagent/blob/main/docs/index.html>
 - Turning on GitHub Pages (Settings -> Pages -> branch `main`, folder `/docs`) serves the same page
-  from <https://aisenseapi.github.io/reterminal-e1002-esphome-tagent/> without a third-party proxy.
+  from <https://aisenseapi.github.io/reterminal-e1002-esphome-tagent/> without a third-party proxy,
+  which is the better link to hand out.
 
 The panel colors in the preview are an estimate of how the pigments read in room light rather than
 measured values, and text can sit a pixel or two off, because the browser and ESPHome derive font
