@@ -5,8 +5,8 @@ Showing weather, markets, currency and commodities on the Seeed reTerminal E1002
 The 800×480 screen uses two persistent columns plus a full-width city strip:
 
 - Current weather, an eight-hour temperature/rain chart and five daily forecasts on the left.
-- Four stocks/indices, two currency pairs, Brent oil, gold and silver on the right. Every numeric series has an eight-point sparkline.
-- Current temperature and weather icon for London, Malaga, Cascais, Marilia, Farsund, Tokyo, New York, Doha and Melbourne along the bottom.
+- S&P 500, Nasdaq Composite, DAX and OSEBX; SEK/NOK and EUR/NOK; plus Brent oil, gold and silver on the right. Every numeric series has an eight-point sparkline.
+- Current temperature, weather icon and local 24-hour time for London, Malaga, Cascais, Marilia, Farsund, Tokyo, New York, Doha and Melbourne along the bottom.
 - Last update, IP address and battery are kept as a compact three-line block in the lower-right corner.
 
 The layout only uses the E1002 panel's six native colors: black, white, red, green, blue and yellow. Text is rendered with one-bit fonts and charts use solid two-pixel lines; there are no gradients or simulated gray surfaces. Weather icons are built from layered circles, rectangles and lines, with black cloud outlines, sun rays, rain drops, lightning, fog, wind and snow details.
@@ -36,17 +36,19 @@ height slightly differently.
 
 ## E1002 refresh policy
 
-The Spectra 6 panel has no partial refresh and a full redraw takes roughly 15–20 seconds. The default scheduled update is therefore 30 minutes. The green hardware button can request an immediate refresh. Avoid short refresh intervals, especially on battery power.
+The Spectra 6 panel has no partial refresh and a full redraw takes roughly 15 to 20 seconds. The default scheduled update is therefore 30 minutes. The green hardware button can request an immediate refresh. Avoid short refresh intervals, especially on battery power.
 
 The current ESPHome configuration keeps Wi-Fi and the Home Assistant API active, so it is intended primarily for USB-C power. Reaching the advertised long battery runtime would require a separate deep-sleep profile; while asleep, the device cannot react immediately to Home Assistant or button-driven network actions.
 
 ## Data flow
 
-`weather-eink.php` collects local weather data from Home Assistant, current temperatures for all nine cities in one batched Open-Meteo request, and an optional normalized market snapshot from `market-data.json`. Open-Meteo does not require an API key for this request, but PHP must have outbound HTTPS and `allow_url_fopen` enabled. Market API keys and provider-specific code should stay on the server rather than on the ESP32.
+`weather-eink.php` collects local weather data from Home Assistant, current temperatures for all nine cities in one batched Open-Meteo request, and delayed market data for the configured indices, currencies and commodities. Open-Meteo does not require an API key for this request, but PHP must have outbound HTTPS and `allow_url_fopen` enabled.
+
+Market data is fetched from Yahoo Finance's chart endpoint and cached for 15 minutes in `market-data.json`. PHP cURL is preferred because it retrieves all nine series concurrently; a stream-based fallback is included. A failed refresh keeps the last complete cache rather than replacing it with partial data. Yahoo's endpoint is convenient for a personal dashboard but is not a contracted market-data service and may change; use a licensed provider before relying on the values commercially or for trading decisions.
 
 Open-Meteo data is CC BY 4.0 and requires attribution. The display therefore includes `WX OPEN-METEO.COM` next to the city section. The free endpoint is suitable for non-commercial prototyping; review Open-Meteo's current licence or commercial plan before commercial deployment.
 
-Copy `market-data-example.json` to `market-data.json` to exercise the full layout. The values in the example are display/test data, not live quotes. A future provider integration only needs to keep this JSON contract updated.
+Copy `market-data-example.json` to `market-data.json` only when an offline display test is needed. The values in the example are display/test data, not live quotes. Once the cache is older than 15 minutes, `weather-eink.php` attempts to replace it with live delayed data.
 
 `data-feed-example.json` shows the combined response consumed by ESPHome.
 

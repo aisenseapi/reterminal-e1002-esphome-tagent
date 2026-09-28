@@ -174,7 +174,7 @@ font:
     id: f_med
     size: 30
     bpp: 1
-    glyphs: "ABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅabcdefghijklmnopqrstuvwxyzæøå0123456789.,:°-+ "
+    glyphs: "ABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅabcdefghijklmnopqrstuvwxyzæøå0123456789.,:°-+/ "
 
   - file: "gfonts://Inter@600"
     id: f_temp
@@ -186,7 +186,7 @@ font:
     id: f_mono_sm
     size: 14
     bpp: 1
-    glyphs: "ABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅabcdefghijklmnopqrstuvwxyzæøå0123456789.,:°%$-+=/ "
+    glyphs: "ABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅabcdefghijklmnopqrstuvwxyzæøå0123456789.,:°%$&-+=/ "
 
   - file: "gfonts://JetBrains+Mono@400"
     id: f_mono_xs
@@ -323,6 +323,9 @@ globals:
     restore_value: no
 
   - id: city_name
+    type: std::string[9]
+    restore_value: no
+  - id: city_time
     type: std::string[9]
     restore_value: no
   - id: city_temp
@@ -490,11 +493,13 @@ script:
                     JsonArrayConst cities = root["cities"];
                     for (int i = 0; i < 9; i++) {
                       id(city_valid)[i] = false;
+                      id(city_time)[i] = "--:--";
                     }
                     int city_limit = std::min(9, (int) cities.size());
                     for (int i = 0; i < city_limit; i++) {
                       JsonObjectConst city = cities[i];
                       id(city_name)[i] = city["name"] | std::string("---");
+                      id(city_time)[i] = city["time"] | std::string("--:--");
                       id(city_temp)[i] = city["temp"] | 0.0f;
                       id(city_icon)[i] = city["icon"] | std::string("cloud");
                       id(city_valid)[i] = city["valid"] | false;
@@ -728,9 +733,11 @@ display:
       it.printf(78, 52, id(f_mono_xs), BLACK,
                 "%s", id(wx_loc).c_str());
 
-      it.printf(438, 10, id(f_big), BLACK, TextAlign::TOP_RIGHT,
+      // Give the degree mark a little more air: the number moves two pixels
+      // left while the mark moves three pixels up.
+      it.printf(436, 10, id(f_big), BLACK, TextAlign::TOP_RIGHT,
                 "%.1f", id(wx_temp));
-      it.printf(451, 10, id(f_big), RED, TextAlign::TOP_RIGHT, "°");
+      it.printf(451, 7, id(f_big), RED, TextAlign::TOP_RIGHT, "°");
       it.printf(438, 68, id(f_mono_xs), BLUE, TextAlign::TOP_RIGHT,
                 "LUFT %d%%  INNE %.1f°", id(wx_hum), id(wx_temp_in));
 
@@ -897,7 +904,7 @@ display:
       for (int i = 0; i < 9; i++) {
         int cx = city_x0 + city_w * i + city_w / 2;
         if (i > 0) {
-          it.filled_rectangle(city_x0 + city_w * i, 407, 1, 65, BLACK);
+          it.filled_rectangle(city_x0 + city_w * i, 407, 1, 68, BLACK);
         }
         it.printf(cx, 409, id(f_mono_xs), BLACK, TextAlign::TOP_CENTER,
                   "%s", id(city_name)[i].c_str());
@@ -910,4 +917,6 @@ display:
         } else {
           it.printf(cx + 2, 429, id(f_temp), RED, TextAlign::TOP_LEFT, "--");
         }
+        it.printf(cx, 461, id(f_mono_xs), BLUE, TextAlign::TOP_CENTER,
+                  "%s", id(city_time)[i].c_str());
       }

@@ -539,14 +539,14 @@
     ],
     market_updated: "14:35",
     stocks: [
-      { symbol: "EQNR",  price: 312.40,  change: 1.42,  spark: [306.2, 307.5, 307.0, 309.1, 308.7, 310.8, 310.4, 312.4] },
-      { symbol: "DNB",   price: 241.10,  change: -0.38, spark: [243.0, 242.7, 242.8, 242.2, 242.4, 241.8, 241.9, 241.1] },
-      { symbol: "KOG",   price: 1682.00, change: 2.10,  spark: [1647, 1653, 1650, 1661, 1658, 1668, 1675, 1682] },
-      { symbol: "OSEBX", price: 1482.60, change: 0.61,  spark: [1473.6, 1476.1, 1475.4, 1477.0, 1479.2, 1478.1, 1482.9, 1482.6] }
+      { symbol: "S&P",    price: 7743.41,  change: 0.51,  spark: [7650.5, 7688.2, 7711.4, 7697.8, 7722.6, 7735.1, 7728.9, 7743.41] },
+      { symbol: "NASDAQ", price: 27068.72, change: 0.48,  spark: [26522.5, 26618.7, 26704.2, 26810.4, 26766.8, 26931.5, 26939.4, 27068.72] },
+      { symbol: "DAX",    price: 25377.66, change: -0.77, spark: [25575.0, 25531.8, 25580.2, 25492.4, 25461.1, 25408.7, 25395.2, 25377.66] },
+      { symbol: "OSEBX",  price: 2093.81,  change: -0.24, spark: [2098.9, 2096.4, 2099.1, 2097.8, 2095.2, 2094.6, 2092.7, 2093.81] }
     ],
     fx: [
-      { symbol: "EUR/NOK", price: 11.6200, change: 0.14,  spark: [11.58, 11.57, 11.59, 11.58, 11.61, 11.60, 11.61, 11.62] },
-      { symbol: "USD/NOK", price: 10.0700, change: -0.22, spark: [10.12, 10.11, 10.12, 10.10, 10.11, 10.09, 10.08, 10.07] }
+      { symbol: "SEK/NOK", price: 0.9520,  change: -0.31, spark: [0.958, 0.957, 0.956, 0.955, 0.954, 0.953, 0.951, 0.952] },
+      { symbol: "EUR/NOK", price: 10.8000, change: -0.18, spark: [10.84, 10.83, 10.82, 10.83, 10.81, 10.82, 10.79, 10.80] }
     ],
     commodities: [
       { symbol: "BRENT", price: 78.42,   change: 0.80,  spark: [77.80, 77.95, 77.90, 78.10, 78.02, 78.25, 78.18, 78.42] },
@@ -554,24 +554,24 @@
       { symbol: "S\u00D8LV",  price: 31.18,   change: 1.10,  spark: [30.78, 30.82, 30.80, 30.95, 30.92, 31.02, 31.08, 31.18] }
     ],
     cities: [
-      { name: "LONDON",    temp: 18, icon: "rain",   valid: true },
-      { name: "MALAGA",    temp: 29, icon: "sunny",  valid: true },
-      { name: "CASCAIS",   temp: 24, icon: "partly", valid: true },
-      { name: "MARILIA",   temp: 27, icon: "sunny",  valid: true },
-      { name: "FARSUND",   temp: 16, icon: "cloud",  valid: true },
-      { name: "TOKYO",     temp: 31, icon: "rain",   valid: true },
-      { name: "NEW YORK",  temp: 26, icon: "partly", valid: true },
-      { name: "DOHA",      temp: 39, icon: "sunny",  valid: true },
-      { name: "MELBOURNE", temp: 13, icon: "fog",    valid: true }
+      { name: "LONDON",    temp: 18, icon: "rain",   valid: true, time: "13:35" },
+      { name: "MALAGA",    temp: 29, icon: "sunny",  valid: true, time: "14:35" },
+      { name: "CASCAIS",   temp: 24, icon: "partly", valid: true, time: "13:35" },
+      { name: "MARILIA",   temp: 27, icon: "sunny",  valid: true, time: "09:35" },
+      { name: "FARSUND",   temp: 16, icon: "cloud",  valid: true, time: "14:35" },
+      { name: "TOKYO",     temp: 31, icon: "rain",   valid: true, time: "21:35" },
+      { name: "NEW YORK",  temp: 26, icon: "partly", valid: true, time: "08:35" },
+      { name: "DOHA",      temp: 39, icon: "sunny",  valid: true, time: "15:35" },
+      { name: "MELBOURNE", temp: 13, icon: "fog",    valid: true, time: "22:35" }
     ]
   };
 
   var LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ\u00C6\u00D8\u00C5abcdefghijklmnopqrstuvwxyz\u00E6\u00F8\u00E5";
   var FONTS = {
     f_big:     { css: '700 48px Inter, sans-serif',            glyphs: "0123456789.,:\u00B0-+ " },
-    f_med:     { css: '700 30px Inter, sans-serif',            glyphs: LETTERS + "0123456789.,:\u00B0-+ " },
+    f_med:     { css: '700 30px Inter, sans-serif',            glyphs: LETTERS + "0123456789.,:\u00B0-+/ " },
     f_temp:    { css: '600 22px Inter, sans-serif',            glyphs: "0123456789.,:\u00B0-+ " },
-    f_mono_sm: { css: '400 14px "JetBrains Mono", monospace',  glyphs: LETTERS + "0123456789.,:\u00B0%$-+=/ " },
+    f_mono_sm: { css: '400 14px "JetBrains Mono", monospace',  glyphs: LETTERS + "0123456789.,:\u00B0%$&-+=/ " },
     f_mono_xs: { css: '400 11px "JetBrains Mono", monospace',  glyphs: LETTERS + "0123456789.,:\u00B0%$-+=?/ " }
   };
 
@@ -798,8 +798,8 @@
     drawIcon(42, 40, 13, DATA.wx_icon);
     text(78, 14, "f_med", BLACK, "left", DATA.wx_now);
     text(78, 52, "f_mono_xs", BLACK, "left", DATA.wx_loc);
-    text(438, 10, "f_big", BLACK, "right", f(DATA.wx_temp, 1));
-    text(451, 10, "f_big", RED, "right", "\u00B0");
+    text(436, 10, "f_big", BLACK, "right", f(DATA.wx_temp, 1));
+    text(451, 7, "f_big", RED, "right", "\u00B0");
     text(438, 68, "f_mono_xs", BLUE, "right",
       "LUFT " + DATA.wx_hum + "%  INNE " + f(DATA.wx_temp_in, 1) + "\u00B0");
     fillRect(16, 88, 422, 1, BLACK);
@@ -891,7 +891,7 @@
     var cityX0 = 8, cityW = idiv(784, 9);
     for (var k = 0; k < 9; k++){
       var ccx = cityX0 + cityW * k + idiv(cityW, 2);
-      if (k > 0) fillRect(cityX0 + cityW * k, 407, 1, 65, BLACK);
+      if (k > 0) fillRect(cityX0 + cityW * k, 407, 1, 68, BLACK);
       text(ccx, 409, "f_mono_xs", BLACK, "center", DATA.cities[k].name);
       roundedBox(ccx - 29, 432, 22, 22, 5, GREEN);
       drawIcon(ccx - 18, 443, 4, DATA.cities[k].icon);
@@ -900,6 +900,7 @@
       } else {
         text(ccx + 2, 429, "f_temp", RED, "left", "--");
       }
+      text(ccx, 461, "f_mono_xs", BLUE, "center", DATA.cities[k].time);
     }
   }
 
