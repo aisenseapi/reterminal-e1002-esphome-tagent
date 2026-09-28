@@ -87,6 +87,11 @@ switch:
 
 # ============ SENSORS ============
 sensor:
+  - platform: wifi_signal
+    id: wifi_rssi
+    internal: true
+    update_interval: 60s
+
   - platform: adc
     pin: GPIO1
     name: "Battery voltage"
@@ -287,19 +292,19 @@ globals:
     restore_value: no
     initial_value: '0'
   - id: fx_symbol
-    type: std::string[2]
+    type: std::string[3]
     restore_value: no
   - id: fx_rate
-    type: float[2]
+    type: float[3]
     restore_value: no
   - id: fx_change
-    type: float[2]
+    type: float[3]
     restore_value: no
   - id: fx_spark_count
-    type: int[2]
+    type: int[3]
     restore_value: no
   - id: fx_spark
-    type: float[16]
+    type: float[24]
     restore_value: no
 
   - id: commodity_count
@@ -319,6 +324,26 @@ globals:
     type: int[3]
     restore_value: no
   - id: commodity_spark
+    type: float[24]
+    restore_value: no
+
+  - id: crypto_count
+    type: int
+    restore_value: no
+    initial_value: '0'
+  - id: crypto_symbol
+    type: std::string[3]
+    restore_value: no
+  - id: crypto_price
+    type: float[3]
+    restore_value: no
+  - id: crypto_change
+    type: float[3]
+    restore_value: no
+  - id: crypto_spark_count
+    type: int[3]
+    restore_value: no
+  - id: crypto_spark
     type: float[24]
     restore_value: no
 
@@ -432,6 +457,7 @@ script:
                     id(market_count) = 0;
                     id(fx_count) = 0;
                     id(commodity_count) = 0;
+                    id(crypto_count) = 0;
                     id(market_updated) = "--:--";
                     JsonObjectConst market = root["market"];
                     if (!market.isNull()) {
@@ -456,7 +482,7 @@ script:
                       id(market_count) = stock_limit;
 
                       JsonArrayConst fx = market["fx"];
-                      int fx_limit = std::min(2, (int) fx.size());
+                      int fx_limit = std::min(3, (int) fx.size());
                       for (int i = 0; i < fx_limit; i++) {
                         JsonObjectConst row = fx[i];
                         id(fx_symbol)[i] = row["symbol"] | std::string("---");
@@ -488,6 +514,24 @@ script:
                         id(commodity_spark_count)[i] = spark_limit;
                       }
                       id(commodity_count) = commodity_limit;
+
+                      // Optional group: older PHP feeds remain readable.
+                      JsonArrayConst crypto = market["crypto"];
+                      int crypto_limit = std::min(3, (int) crypto.size());
+                      for (int i = 0; i < crypto_limit; i++) {
+                        JsonObjectConst row = crypto[i];
+                        id(crypto_symbol)[i] = row["symbol"] | std::string("---");
+                        id(crypto_price)[i] = row["price"] | 0.0f;
+                        id(crypto_change)[i] = row["change"] | 0.0f;
+                        id(crypto_spark_count)[i] = 0;
+                        JsonArrayConst spark = row["spark"];
+                        int spark_limit = std::min(8, (int) spark.size());
+                        for (int j = 0; j < spark_limit; j++) {
+                          id(crypto_spark)[i * 8 + j] = spark[j].as<float>();
+                        }
+                        id(crypto_spark_count)[i] = spark_limit;
+                      }
+                      id(crypto_count) = crypto_limit;
                     }
 
                     JsonArrayConst cities = root["cities"];
@@ -733,11 +777,12 @@ display:
       it.printf(78, 52, id(f_mono_xs), BLACK,
                 "%s", id(wx_loc).c_str());
 
-      // Give the degree mark a little more air: the number moves two pixels
-      // left while the mark moves three pixels up.
+      // Fixed superscript ring matches the approved reference without
+      // relying on the font's degree-glyph bearing or baseline.
       it.printf(436, 10, id(f_big), BLACK, TextAlign::TOP_RIGHT,
                 "%.1f", id(wx_temp));
-      it.printf(451, 7, id(f_big), RED, TextAlign::TOP_RIGHT, "°");
+      it.filled_circle(440, 21, 7, RED);
+      it.filled_circle(440, 21, 4, WHITE);
       it.printf(438, 68, id(f_mono_xs), BLUE, TextAlign::TOP_RIGHT,
                 "LUFT %d%%  INNE %.1f°", id(wx_hum), id(wx_temp_in));
 
@@ -813,13 +858,15 @@ display:
       }
 
       // ============ MARKET COLUMN ============
+      // 13 price rows fit at 19px pitch with the same 14px text. Graphs are
+      // 14px high; section dividers and the two-line footer remain separate.
       const int mx = 466;
-      it.printf(mx, 14, id(f_mono_sm), BLACK, "MARKEDER");
-      it.printf(786, 16, id(f_mono_xs), BLACK, TextAlign::TOP_RIGHT,
+      it.printf(mx, 9, id(f_mono_sm), BLACK, "MARKEDER");
+      it.printf(786, 11, id(f_mono_xs), BLACK, TextAlign::TOP_RIGHT,
                 "DATA %s", id(market_updated).c_str());
 
       for (int i = 0; i < id(market_count); i++) {
-        int y = 36 + i * 27;
+        int y = 30 + i * 19;
         Color change_color = id(market_change)[i] > 0.0f ? GREEN
                              : (id(market_change)[i] < 0.0f ? RED : BLACK);
         it.printf(mx, y, id(f_mono_sm), BLACK, "%s", id(market_symbol)[i].c_str());
@@ -827,20 +874,21 @@ display:
                   "%.2f", id(market_price)[i]);
         it.printf(700, y, id(f_mono_sm), change_color, TextAlign::TOP_RIGHT,
                   "%+.2f%%", id(market_change)[i]);
-        draw_spark(715, y - 2, 69, 22,
+        draw_spark(715, y + 2, 69, 14,
                    id(market_spark) + i * 8,
                    id(market_spark_count)[i], change_color);
       }
 
-      if (id(market_count) == 0 && id(fx_count) == 0 && id(commodity_count) == 0) {
+      if (id(market_count) == 0 && id(fx_count) == 0
+          && id(commodity_count) == 0 && id(crypto_count) == 0) {
         it.printf(626, 65, id(f_mono_sm), RED, TextAlign::TOP_CENTER,
                   "INGEN MARKEDSDATA");
       }
 
-      it.filled_rectangle(mx, 145, 320, 1, BLACK);
-      it.printf(mx, 154, id(f_mono_sm), BLACK, "VALUTA");
+      it.filled_rectangle(mx, 108, 320, 1, BLACK);
+      it.printf(mx, 112, id(f_mono_sm), BLACK, "VALUTA");
       for (int i = 0; i < id(fx_count); i++) {
-        int y = 177 + i * 27;
+        int y = 132 + i * 19;
         Color change_color = id(fx_change)[i] > 0.0f ? GREEN
                              : (id(fx_change)[i] < 0.0f ? RED : BLACK);
         it.printf(mx, y, id(f_mono_sm), BLACK, "%s", id(fx_symbol)[i].c_str());
@@ -848,15 +896,15 @@ display:
                   "%.4f", id(fx_rate)[i]);
         it.printf(700, y, id(f_mono_sm), change_color, TextAlign::TOP_RIGHT,
                   "%+.2f%%", id(fx_change)[i]);
-        draw_spark(715, y - 2, 69, 22,
+        draw_spark(715, y + 2, 69, 14,
                    id(fx_spark) + i * 8,
                    id(fx_spark_count)[i], change_color);
       }
 
-      it.filled_rectangle(mx, 230, 320, 1, BLACK);
-      it.printf(mx, 239, id(f_mono_sm), BLACK, "RÅVARER");
+      it.filled_rectangle(mx, 191, 320, 1, BLACK);
+      it.printf(mx, 195, id(f_mono_sm), BLACK, "RÅVARER");
       for (int i = 0; i < id(commodity_count); i++) {
-        int y = 262 + i * 27;
+        int y = 215 + i * 19;
         Color change_color = id(commodity_change)[i] > 0.0f ? GREEN
                              : (id(commodity_change)[i] < 0.0f ? RED : BLACK);
         it.printf(mx, y, id(f_mono_sm), BLACK, "%s", id(commodity_symbol)[i].c_str());
@@ -864,20 +912,42 @@ display:
                   "$%.2f", id(commodity_price)[i]);
         it.printf(700, y, id(f_mono_sm), change_color, TextAlign::TOP_RIGHT,
                   "%+.2f%%", id(commodity_change)[i]);
-        draw_spark(715, y - 2, 69, 22,
+        draw_spark(715, y + 2, 69, 14,
                    id(commodity_spark) + i * 8,
                    id(commodity_spark_count)[i], change_color);
       }
 
-      // Compact three-line technical block: deliberately no full-width footer.
-      it.filled_rectangle(mx, 341, 320, 1, BLACK);
-      it.printf(mx, 350, id(f_mono_xs), BLACK, "WX OPEN-METEO.COM");
+      it.filled_rectangle(mx, 274, 320, 1, BLACK);
+      it.printf(mx, 278, id(f_mono_sm), BLACK, "KRYPTO");
+      for (int i = 0; i < id(crypto_count); i++) {
+        int y = 298 + i * 19;
+        Color change_color = id(crypto_change)[i] > 0.0f ? GREEN
+                             : (id(crypto_change)[i] < 0.0f ? RED : BLACK);
+        it.printf(mx, y, id(f_mono_sm), BLACK, "%s", id(crypto_symbol)[i].c_str());
+        it.printf(612, y, id(f_mono_sm), BLACK, TextAlign::TOP_RIGHT,
+                  "$%.2f", id(crypto_price)[i]);
+        it.printf(700, y, id(f_mono_sm), change_color, TextAlign::TOP_RIGHT,
+                  "%+.2f%%", id(crypto_change)[i]);
+        draw_spark(715, y + 2, 69, 14,
+                   id(crypto_spark) + i * 8,
+                   id(crypto_spark_count)[i], change_color);
+      }
+      if (id(crypto_count) == 0 && (id(market_count) > 0
+          || id(fx_count) > 0 || id(commodity_count) > 0)) {
+        it.printf(626, 317, id(f_mono_xs), RED, TextAlign::TOP_CENTER,
+                  "INGEN KRYPTODATA");
+      }
+
+      // Two compact status lines leave room for all market groups. The last
+      // line has fixed slots for WiFi, battery and even a 15-character IPv4.
+      it.filled_rectangle(mx, 357, 320, 1, BLACK);
+      it.printf(mx, 366, id(f_mono_xs), BLACK, "WX OPEN-METEO.COM");
       if (id(wx_last_update) > 0) {
         ESPTime t = ESPTime::from_epoch_local(id(wx_last_update));
-        it.strftime(786, 350, id(f_mono_xs), BLACK, TextAlign::TOP_RIGHT,
+        it.strftime(786, 366, id(f_mono_xs), BLACK, TextAlign::TOP_RIGHT,
                     "OPPD %H:%M", t);
       } else {
-        it.printf(786, 350, id(f_mono_xs), BLACK, TextAlign::TOP_RIGHT,
+        it.printf(786, 366, id(f_mono_xs), BLACK, TextAlign::TOP_RIGHT,
                   "OPPD --:--");
       }
 
@@ -886,14 +956,25 @@ display:
       if (ip_addresses[0].is_set()) {
         ip_addresses[0].str_to(ip_str);
       }
-      it.printf(786, 368, id(f_mono_xs), BLACK, TextAlign::TOP_RIGHT,
+      it.printf(786, 384, id(f_mono_xs), BLACK, TextAlign::TOP_RIGHT,
                 "IP %s", ip_str);
-      it.printf(786, 386, id(f_mono_xs), BLUE, TextAlign::TOP_RIGHT,
-                "BAT %.0f%%", id(battery_pct).state);
+      if (std::isfinite(id(battery_pct).state)) {
+        it.printf(580, 384, id(f_mono_xs), BLUE,
+                  "BAT %.0f%%", id(battery_pct).state);
+      } else {
+        it.printf(580, 384, id(f_mono_xs), BLUE, "BAT --%%");
+      }
 
       if (!id(wx_status).empty()) {
-        it.printf(mx, 386, id(f_mono_xs), RED, TextAlign::TOP_LEFT,
+        it.printf(mx, 384, id(f_mono_xs), RED, TextAlign::TOP_LEFT,
                   "%s", id(wx_status).c_str());
+      } else if (std::isfinite(id(wifi_rssi).state)) {
+        // Conventional RSSI quality estimate: -100 dBm = 0%, -50 dBm = 100%.
+        float signal_pct = std::min(100.0f, std::max(0.0f,
+                            2.0f * (id(wifi_rssi).state + 100.0f)));
+        it.printf(mx, 384, id(f_mono_xs), BLUE, "WIFI %.0f%%", signal_pct);
+      } else {
+        it.printf(mx, 384, id(f_mono_xs), BLUE, "WIFI --%%");
       }
 
       // ============ WORLD CITIES ============

@@ -393,7 +393,7 @@
       </div>
     </div>
     <p class="caption">
-      <span data-i18n="cap1">Eksempeldata fra data-feed-example.json. Ingen live-leverand&#xF8;r er koblet til enn&#xE5;</span>
+      <span data-i18n="cap1">Illustrasjonsdata. Forh&#xE5;ndsvisningen henter ikke livekurser</span>
       <span data-i18n="cap2">Rammen rundt er kun illustrasjon</span>
     </p>
   </div>
@@ -433,7 +433,7 @@
     </div>
   </section>
 
-  <footer data-i18n="footer">Kilde: seeed-1002-dashboard.yaml, linje 574-913 &#xB7; aisenseapi/reterminal-e1002-esphome-tagent @ c31896e</footer>
+  <footer data-i18n="footer">Kilde: seeed-1002-dashboard.yaml &#xB7; tre valutapar, byklokker og Wi-Fi-status</footer>
 </div>
 
 <script>
@@ -511,68 +511,75 @@
 
   var DATA = {
     wx_loc: "Aker brygge, Oslo",
-    wx_now: "Skyet",
-    wx_temp: 14.4,
-    wx_hum: 54,
-    wx_icon: "cloud",
-    wx_temp_in: 25.3,
+    wx_now: "Regn",
+    wx_temp: 15.9,
+    wx_hum: 92,
+    wx_icon: "rain",
+    wx_temp_in: 24.6,
     wx_status: "",
-    wx_updated: "14:36",
-    ip: "192.168.68.121",
-    battery: 87,
+    wx_updated: "15:10",
+    ip: "192.168.68.105",
+    battery: 100,
+    wifi_signal: 84,
     hourly: [
-      { t: "15:00", icon: "partly", temp: 14.4, rain: 10 },
-      { t: "16:00", icon: "cloud",  temp: 14.1, rain: 20 },
-      { t: "17:00", icon: "rain",   temp: 13.5, rain: 45 },
-      { t: "18:00", icon: "rain",   temp: 12.8, rain: 60 },
-      { t: "19:00", icon: "cloud",  temp: 12.3, rain: 30 },
-      { t: "20:00", icon: "cloud",  temp: 11.9, rain: 15 },
-      { t: "21:00", icon: "partly", temp: 11.4, rain: 10 },
-      { t: "22:00", icon: "night",  temp: 10.9, rain: 5 }
+      { t: "16:00", icon: "rain",   temp: 15.9, rain: 55 },
+      { t: "17:00", icon: "rain",   temp: 16.0, rain: 35 },
+      { t: "18:00", icon: "rain",   temp: 15.8, rain: 25 },
+      { t: "19:00", icon: "cloud",  temp: 15.6, rain: 15 },
+      { t: "20:00", icon: "cloud",  temp: 15.1, rain: 10 },
+      { t: "21:00", icon: "cloud",  temp: 14.8, rain: 5 },
+      { t: "22:00", icon: "partly", temp: 14.4, rain: 5 },
+      { t: "23:00", icon: "night",  temp: 14.1, rain: 5 }
     ],
     daily: [
-      { d: "i morgen", icon: "cloud",  hi: 14.6, lo: 7.2 },
-      { d: "torsdag",  icon: "rain",   hi: 8.1,  lo: 5.4 },
-      { d: "fredag",   icon: "cloud",  hi: 11.8, lo: 7.8 },
-      { d: "l\u00F8rdag",  icon: "rain",   hi: 14.6, lo: 7.2 },
-      { d: "s\u00F8ndag",  icon: "partly", hi: 15.2, lo: 8.8 }
+      { d: "i morgen", icon: "sunny",  hi: 17.4, lo: 8.6 },
+      { d: "onsdag",   icon: "partly", hi: 16.1, lo: 12.6 },
+      { d: "torsdag",  icon: "cloud",  hi: 16.7, lo: 14.1 },
+      { d: "fredag",   icon: "cloud",  hi: 14.8, lo: 13.6 },
+      { d: "l\u00F8rdag", icon: "cloud", hi: 15.5, lo: 13.0 }
     ],
-    market_updated: "14:35",
+    market_updated: "15:02",
     stocks: [
       { symbol: "S&P",    price: 7743.41,  change: 0.51,  spark: [7650.5, 7688.2, 7711.4, 7697.8, 7722.6, 7735.1, 7728.9, 7743.41] },
       { symbol: "NASDAQ", price: 27068.72, change: 0.48,  spark: [26522.5, 26618.7, 26704.2, 26810.4, 26766.8, 26931.5, 26939.4, 27068.72] },
-      { symbol: "DAX",    price: 25377.66, change: -0.77, spark: [25575.0, 25531.8, 25580.2, 25492.4, 25461.1, 25408.7, 25395.2, 25377.66] },
-      { symbol: "OSEBX",  price: 2093.81,  change: -0.24, spark: [2098.9, 2096.4, 2099.1, 2097.8, 2095.2, 2094.6, 2092.7, 2093.81] }
+      { symbol: "DAX",    price: 25478.46, change: 0.28, spark: [25470, 25510, 25483, 25472, 25468, 25472, 25478, 25478.46] },
+      { symbol: "OSEBX",  price: 2096.78,  change: 0.67, spark: [2101, 2093, 2091, 2097, 2094, 2088, 2093, 2096.78] }
     ],
     fx: [
-      { symbol: "SEK/NOK", price: 0.9520,  change: -0.31, spark: [0.958, 0.957, 0.956, 0.955, 0.954, 0.953, 0.951, 0.952] },
-      { symbol: "EUR/NOK", price: 10.8000, change: -0.18, spark: [10.84, 10.83, 10.82, 10.83, 10.81, 10.82, 10.79, 10.80] }
+      { symbol: "SEK/NOK", price: 0.9554, change: -0.28, spark: [0.958, 0.958, 0.96, 0.955, 0.957, 0.958, 0.957, 0.9554] },
+      { symbol: "EUR/NOK", price: 10.8212, change: -0.07, spark: [10.825, 10.82, 10.821, 10.801, 10.815, 10.828, 10.825, 10.8212] },
+      { symbol: "USD/NOK", price: 9.4600, change: 0.12, spark: [9.438, 9.444, 9.441, 9.449, 9.453, 9.450, 9.456, 9.460] }
     ],
     commodities: [
-      { symbol: "BRENT", price: 78.42,   change: 0.80,  spark: [77.80, 77.95, 77.90, 78.10, 78.02, 78.25, 78.18, 78.42] },
-      { symbol: "GULL",  price: 2631.00, change: -0.20, spark: [2637, 2639, 2636, 2637, 2634, 2635, 2632, 2631] },
-      { symbol: "S\u00D8LV",  price: 31.18,   change: 1.10,  spark: [30.78, 30.82, 30.80, 30.95, 30.92, 31.02, 31.08, 31.18] }
+      { symbol: "BRENT", price: 99.01, change: 1.61, spark: [98.9, 98.9, 98.8, 99.1, 99.6, 98.95, 98.96, 99.01] },
+      { symbol: "GULL", price: 4182.00, change: -3.22, spark: [4207, 4195, 4195, 4193, 4193, 4192, 4187, 4182] },
+      { symbol: "S\u00D8LV", price: 61.63, change: -4.89, spark: [63.4, 62.6, 62.4, 62.3, 62.3, 62.1, 61.8, 61.63] }
+    ],
+    crypto: [
+      { symbol: "SOL", price: 146.23, change: 2.15, spark: [142.1, 142.9, 143.6, 143.1, 144.5, 145.3, 145.0, 146.23] },
+      { symbol: "ETH", price: 3245.67, change: -0.84, spark: [3280.0, 3272.5, 3279.8, 3260.4, 3268.1, 3253.7, 3258.2, 3245.67] },
+      { symbol: "BTC", price: 64280.50, change: 1.32, spark: [63100.0, 63320.5, 63280.2, 63610.8, 63840.1, 63770.4, 64010.2, 64280.50] }
     ],
     cities: [
-      { name: "LONDON",    temp: 18, icon: "rain",   valid: true, time: "13:35" },
-      { name: "MALAGA",    temp: 29, icon: "sunny",  valid: true, time: "14:35" },
-      { name: "CASCAIS",   temp: 24, icon: "partly", valid: true, time: "13:35" },
-      { name: "MARILIA",   temp: 27, icon: "sunny",  valid: true, time: "09:35" },
-      { name: "FARSUND",   temp: 16, icon: "cloud",  valid: true, time: "14:35" },
-      { name: "TOKYO",     temp: 31, icon: "rain",   valid: true, time: "21:35" },
-      { name: "NEW YORK",  temp: 26, icon: "partly", valid: true, time: "08:35" },
-      { name: "DOHA",      temp: 39, icon: "sunny",  valid: true, time: "15:35" },
-      { name: "MELBOURNE", temp: 13, icon: "fog",    valid: true, time: "22:35" }
+      { name: "LONDON",    temp: 19, icon: "cloud", valid: true, time: "14:10" },
+      { name: "MALAGA",    temp: 22, icon: "cloud", valid: true, time: "15:10" },
+      { name: "CASCAIS",   temp: 24, icon: "sunny", valid: true, time: "14:10" },
+      { name: "MARILIA",   temp: 28, icon: "sunny", valid: true, time: "10:10" },
+      { name: "FARSUND",   temp: 16, icon: "cloud", valid: true, time: "15:10" },
+      { name: "TOKYO",     temp: 21, icon: "cloud", valid: true, time: "22:10" },
+      { name: "NEW YORK",  temp: 14, icon: "cloud", valid: true, time: "09:10" },
+      { name: "DOHA",      temp: 38, icon: "sunny", valid: true, time: "16:10" },
+      { name: "MELBOURNE", temp: 11, icon: "cloud", valid: true, time: "23:10" }
     ]
   };
 
   var LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ\u00C6\u00D8\u00C5abcdefghijklmnopqrstuvwxyz\u00E6\u00F8\u00E5";
   var FONTS = {
-    f_big:     { css: '700 48px Inter, sans-serif',            glyphs: "0123456789.,:\u00B0-+ " },
-    f_med:     { css: '700 30px Inter, sans-serif',            glyphs: LETTERS + "0123456789.,:\u00B0-+/ " },
-    f_temp:    { css: '600 22px Inter, sans-serif',            glyphs: "0123456789.,:\u00B0-+ " },
-    f_mono_sm: { css: '400 14px "JetBrains Mono", monospace',  glyphs: LETTERS + "0123456789.,:\u00B0%$&-+=/ " },
-    f_mono_xs: { css: '400 11px "JetBrains Mono", monospace',  glyphs: LETTERS + "0123456789.,:\u00B0%$-+=?/ " }
+    f_big:     { css: '700 48px Inter, sans-serif', baseline: 47, glyphs: "0123456789.,:\u00B0-+ " },
+    f_med:     { css: '700 30px Inter, sans-serif', baseline: 30, glyphs: LETTERS + "0123456789.,:\u00B0-+/ " },
+    f_temp:    { css: '600 22px Inter, sans-serif', baseline: 22, glyphs: "0123456789.,:\u00B0-+ " },
+    f_mono_sm: { css: '400 14px "JetBrains Mono", monospace', baseline: 15, glyphs: LETTERS + "0123456789.,:\u00B0%$&-+=/ " },
+    f_mono_xs: { css: '400 11px "JetBrains Mono", monospace', baseline: 12, glyphs: LETTERS + "0123456789.,:\u00B0%$-+=?/ " }
   };
 
   var buf = new Uint8Array(W * H);
@@ -636,7 +643,9 @@
       var f = FONTS[id];
       tctx.font = f.css;
       var m = tctx.measureText(f.glyphs);
-      f.ascent = m.actualBoundingBoxAscent || 10;
+      // ESPHome aligns TOP using the font baseline, not the visible digit
+      // height. These baselines match the generated firmware font metadata.
+      f.ascent = f.baseline || m.actualBoundingBoxAscent || 10;
       f.descent = m.actualBoundingBoxDescent || 4;
     }
   }
@@ -799,7 +808,8 @@
     text(78, 14, "f_med", BLACK, "left", DATA.wx_now);
     text(78, 52, "f_mono_xs", BLACK, "left", DATA.wx_loc);
     text(436, 10, "f_big", BLACK, "right", f(DATA.wx_temp, 1));
-    text(451, 7, "f_big", RED, "right", "\u00B0");
+    filledCircle(440, 21, 7, RED);
+    filledCircle(440, 21, 4, WHITE);
     text(438, 68, "f_mono_xs", BLUE, "right",
       "LUFT " + DATA.wx_hum + "%  INNE " + f(DATA.wx_temp_in, 1) + "\u00B0");
     fillRect(16, 88, 422, 1, BLACK);
@@ -845,47 +855,62 @@
 
     // market column
     var mx = 466;
-    text(mx, 14, "f_mono_sm", BLACK, "left", "MARKEDER");
-    text(786, 16, "f_mono_xs", BLACK, "right", "DATA " + DATA.market_updated);
+    text(mx, 9, "f_mono_sm", BLACK, "left", "MARKEDER");
+    text(786, 11, "f_mono_xs", BLACK, "right", "DATA " + DATA.market_updated);
 
     DATA.stocks.forEach(function(row, i){
-      var y = 36 + i * 27;
+      var y = 30 + i * 19;
       var c = changeColor(row.change);
       text(mx, y, "f_mono_sm", BLACK, "left", row.symbol);
       text(612, y, "f_mono_sm", BLACK, "right", f(row.price, 2));
       text(700, y, "f_mono_sm", c, "right", signed(row.change));
-      drawSpark(715, y - 2, 69, 22, row.spark, row.spark.length, c);
+      drawSpark(715, y + 2, 69, 14, row.spark, row.spark.length, c);
     });
 
-    fillRect(mx, 145, 320, 1, BLACK);
-    text(mx, 154, "f_mono_sm", BLACK, "left", "VALUTA");
+    fillRect(mx, 108, 320, 1, BLACK);
+    text(mx, 112, "f_mono_sm", BLACK, "left", "VALUTA");
     DATA.fx.forEach(function(row, i){
-      var y = 177 + i * 27;
+      var y = 132 + i * 19;
       var c = changeColor(row.change);
       text(mx, y, "f_mono_sm", BLACK, "left", row.symbol);
       text(612, y, "f_mono_sm", BLACK, "right", f(row.price, 4));
       text(700, y, "f_mono_sm", c, "right", signed(row.change));
-      drawSpark(715, y - 2, 69, 22, row.spark, row.spark.length, c);
+      drawSpark(715, y + 2, 69, 14, row.spark, row.spark.length, c);
     });
 
-    fillRect(mx, 230, 320, 1, BLACK);
-    text(mx, 239, "f_mono_sm", BLACK, "left", "R\u00C5VARER");
+    fillRect(mx, 191, 320, 1, BLACK);
+    text(mx, 195, "f_mono_sm", BLACK, "left", "R\u00C5VARER");
     DATA.commodities.forEach(function(row, i){
-      var y = 262 + i * 27;
+      var y = 215 + i * 19;
       var c = changeColor(row.change);
       text(mx, y, "f_mono_sm", BLACK, "left", row.symbol);
       text(612, y, "f_mono_sm", BLACK, "right", "$" + f(row.price, 2));
       text(700, y, "f_mono_sm", c, "right", signed(row.change));
-      drawSpark(715, y - 2, 69, 22, row.spark, row.spark.length, c);
+      drawSpark(715, y + 2, 69, 14, row.spark, row.spark.length, c);
     });
 
+    fillRect(mx, 274, 320, 1, BLACK);
+    text(mx, 278, "f_mono_sm", BLACK, "left", "KRYPTO");
+    (DATA.crypto || []).forEach(function(row, i){
+      var y = 298 + i * 19;
+      var c = changeColor(row.change);
+      text(mx, y, "f_mono_sm", BLACK, "left", row.symbol);
+      text(612, y, "f_mono_sm", BLACK, "right", "$" + f(row.price, 2));
+      text(700, y, "f_mono_sm", c, "right", signed(row.change));
+      drawSpark(715, y + 2, 69, 14, row.spark, row.spark.length, c);
+    });
+    if (!(DATA.crypto || []).length && (DATA.stocks.length || DATA.fx.length || DATA.commodities.length)) {
+      text(626, 317, "f_mono_xs", RED, "center", "INGEN KRYPTODATA");
+    }
+
     // technical block
-    fillRect(mx, 341, 320, 1, BLACK);
-    text(mx, 350, "f_mono_xs", BLACK, "left", "WX OPEN-METEO.COM");
-    text(786, 350, "f_mono_xs", BLACK, "right", "OPPD " + DATA.wx_updated);
-    text(786, 368, "f_mono_xs", BLACK, "right", "IP " + DATA.ip);
-    text(786, 386, "f_mono_xs", BLUE, "right", "BAT " + f(DATA.battery, 0) + "%");
-    if (DATA.wx_status) text(mx, 386, "f_mono_xs", RED, "left", DATA.wx_status);
+    fillRect(mx, 357, 320, 1, BLACK);
+    text(mx, 366, "f_mono_xs", BLACK, "left", "WX OPEN-METEO.COM");
+    text(786, 366, "f_mono_xs", BLACK, "right", "OPPD " + DATA.wx_updated);
+    text(786, 384, "f_mono_xs", BLACK, "right", "IP " + DATA.ip);
+    text(580, 384, "f_mono_xs", BLUE, "left", "BAT " + (Number.isFinite(DATA.battery) ? f(DATA.battery, 0) : "--") + "%");
+    if (DATA.wx_status) text(mx, 384, "f_mono_xs", RED, "left", DATA.wx_status);
+    else text(mx, 384, "f_mono_xs", BLUE, "left", "WIFI " + (Number.isFinite(DATA.wifi_signal) ? f(DATA.wifi_signal, 0) : "--") + "%");
 
     // world cities
     var cityX0 = 8, cityW = idiv(784, 9);
@@ -984,7 +1009,7 @@
       mode_rgb: "Raw RGB",
       lbl_zoom: "Zoom",
       realism: "Paper texture and glare",
-      cap1: "Example data from data-feed-example.json. No live provider is connected yet",
+      cap1: "Illustrative data. This preview does not fetch live quotes",
       cap2: "The frame around it is illustration only",
       h2_palette: "The panel's six colors",
       callout: "<b>Note: the panel has six colors, not seven.</b> Spectra 6 (E6) gives black, white, red, yellow, green and blue. The older ACeP panels had seven by adding orange. The YAML defines exactly these six as <code>Color</code> constants, and no other value can reach the screen. That is why this rendering stores nothing but a color index from 0 to 5 per pixel.",
@@ -1002,7 +1027,7 @@
       n2c: "<b>Paper texture and glare</b> sit as a layer on top of the image to imitate the matte surface. They never touch the pixels.",
       n2d: "<b>The frame</b> is a neutral illustration, not a rendering of the enclosure.",
       n2e: "The refresh animation is compressed from ~18 seconds to about four.",
-      footer: "Source: seeed-1002-dashboard.yaml, lines 574-913 \u00B7 aisenseapi/reterminal-e1002-esphome-tagent @ c31896e"
+      footer: "Source: seeed-1002-dashboard.yaml \u00B7 three currency pairs, city clocks and Wi-Fi status"
     },
     pt: {
       h1: "Vista do painel E1002",
@@ -1017,7 +1042,7 @@
       mode_rgb: "RGB puro",
       lbl_zoom: "Zoom",
       realism: "Textura de papel e reflexo",
-      cap1: "Dados de exemplo de data-feed-example.json. Ainda n\u00E3o h\u00E1 fornecedor em direto ligado",
+      cap1: "Dados ilustrativos. Esta vista n\u00E3o consulta cota\u00E7\u00F5es em direto",
       cap2: "A moldura em redor \u00E9 apenas ilustrativa",
       h2_palette: "As seis cores do painel",
       callout: "<b>Nota: o painel tem seis cores, n\u00E3o sete.</b> O Spectra 6 (E6) d\u00E1 preto, branco, vermelho, amarelo, verde e azul. Os pain\u00E9is ACeP mais antigos tinham sete, acrescentando laranja. O YAML define exatamente estas seis como constantes <code>Color</code>, e nenhum outro valor chega ao painel. Por isso esta renderiza\u00E7\u00E3o guarda apenas um \u00EDndice de cor de 0 a 5 por pixel.",
@@ -1035,7 +1060,7 @@
       n2c: "<b>A textura de papel e o reflexo</b> s\u00E3o uma camada por cima da imagem, para imitar a superf\u00EDcie mate. Nunca tocam nos pixels.",
       n2d: "<b>A moldura</b> \u00E9 uma ilustra\u00E7\u00E3o neutra, n\u00E3o uma reprodu\u00E7\u00E3o da caixa.",
       n2e: "A anima\u00E7\u00E3o de atualiza\u00E7\u00E3o est\u00E1 comprimida de ~18 segundos para cerca de quatro.",
-      footer: "Fonte: seeed-1002-dashboard.yaml, linhas 574-913 \u00B7 aisenseapi/reterminal-e1002-esphome-tagent @ c31896e"
+      footer: "Fonte: seeed-1002-dashboard.yaml \u00B7 tr\u00EAs pares cambiais, rel\u00F3gios locais e sinal Wi-Fi"
     },
     zh: {
       h1: "E1002 \u9762\u677F\u9884\u89C8",
@@ -1050,7 +1075,7 @@
       mode_rgb: "\u7EAF RGB",
       lbl_zoom: "\u7F29\u653E",
       realism: "\u7EB8\u5F20\u7EB9\u7406\u4E0E\u53CD\u5149",
-      cap1: "\u793A\u4F8B\u6570\u636E\u6765\u81EA data-feed-example.json\uFF0C\u5C1A\u672A\u63A5\u5165\u5B9E\u65F6\u6570\u636E\u6E90",
+      cap1: "\u793A\u4F8B\u6570\u636E\uFF0C\u6B64\u9884\u89C8\u4E0D\u83B7\u53D6\u5B9E\u65F6\u884C\u60C5",
       cap2: "\u5916\u6846\u4EC5\u4E3A\u793A\u610F",
       h2_palette: "\u9762\u677F\u7684\u516D\u79CD\u989C\u8272",
       callout: "<b>\u6CE8\u610F\uFF1A\u9762\u677F\u662F\u516D\u8272\uFF0C\u4E0D\u662F\u4E03\u8272\u3002</b>Spectra 6\uFF08E6\uFF09\u63D0\u4F9B\u9ED1\u3001\u767D\u3001\u7EA2\u3001\u9EC4\u3001\u7EFF\u3001\u84DD\u3002\u66F4\u65E9\u7684 ACeP \u9762\u677F\u52A0\u4E0A\u6A59\u8272\u5171\u4E03\u8272\u3002YAML \u6B63\u662F\u628A\u8FD9\u516D\u79CD\u5B9A\u4E49\u4E3A <code>Color</code> \u5E38\u91CF\uFF0C\u5176\u4ED6\u4EFB\u4F55\u6570\u503C\u90FD\u65E0\u6CD5\u9001\u5230\u9762\u677F\uFF0C\u56E0\u6B64\u8FD9\u91CC\u7684\u6E32\u67D3\u6BCF\u4E2A\u50CF\u7D20\u53EA\u5B58\u4E00\u4E2A 0 \u5230 5 \u7684\u989C\u8272\u7D22\u5F15\u3002",
@@ -1068,7 +1093,7 @@
       n2c: "<b>\u7EB8\u5F20\u7EB9\u7406\u4E0E\u53CD\u5149</b>\u662F\u53E0\u5728\u753B\u9762\u4E4B\u4E0A\u7684\u4E00\u5C42\uFF0C\u7528\u6765\u6A21\u62DF\u54D1\u5149\u8868\u9762\u3002\u5B83\u4EEC\u4ECE\u4E0D\u6539\u52A8\u50CF\u7D20\u3002",
       n2d: "<b>\u5916\u6846</b>\u662F\u4E2D\u6027\u793A\u610F\uFF0C\u5E76\u975E\u673A\u58F3\u7684\u8FD8\u539F\u3002",
       n2e: "\u5237\u65B0\u52A8\u753B\u4ECE\u7EA6 18 \u79D2\u538B\u7F29\u5230\u4E86\u56DB\u79D2\u5DE6\u53F3\u3002",
-      footer: "\u6765\u6E90\uFF1Aseeed-1002-dashboard.yaml\uFF0C\u7B2C 574-913 \u884C \u00B7 aisenseapi/reterminal-e1002-esphome-tagent @ c31896e"
+      footer: "\u6765\u6E90\uFF1Aseeed-1002-dashboard.yaml \u00B7 \u4E09\u7EC4\u6C47\u7387\u3001\u57CE\u5E02\u65F6\u949F\u548C Wi-Fi \u4FE1\u53F7"
     }
   };
 ;

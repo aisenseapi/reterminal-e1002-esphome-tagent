@@ -6,3 +6,5 @@
 /market-data.json
 # Compiled firmware contains the secrets.yaml values in plain text
 /build-artifacts/
+.agent-state/
+/device-backups/

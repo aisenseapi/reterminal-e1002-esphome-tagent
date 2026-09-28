@@ -18,11 +18,17 @@ $MARKET_SERIES = [
     'fx' => [
         ['label'=>'SEK/NOK', 'ticker'=>'SEKNOK=X'],
         ['label'=>'EUR/NOK', 'ticker'=>'EURNOK=X'],
+        ['label'=>'USD/NOK', 'ticker'=>'NOK=X'],
     ],
     'commodities' => [
         ['label'=>'BRENT', 'ticker'=>'BZ=F'],
         ['label'=>'GULL',  'ticker'=>'GC=F'],
         ['label'=>'SØLV',  'ticker'=>'SI=F'],
+    ],
+    'crypto' => [
+        ['label'=>'SOL', 'ticker'=>'SOL-USD'],
+        ['label'=>'ETH', 'ticker'=>'ETH-USD'],
+        ['label'=>'BTC', 'ticker'=>'BTC-USD'],
     ],
 ];
 
@@ -100,15 +106,16 @@ function normalizeMarketRows($rows, $limit, $withSpark = false) {
 }
 
 function normalizeMarketFeed($data) {
-    $empty = ['updated'=>'--:--', 'stocks'=>[], 'fx'=>[], 'commodities'=>[]];
+    $empty = ['updated'=>'--:--', 'stocks'=>[], 'fx'=>[], 'commodities'=>[], 'crypto'=>[]];
     if (!is_array($data)) return $empty;
 
     $updated = preg_replace('/[^0-9:.-]/', '', (string)($data['updated'] ?? '--:--'));
     return [
         'updated' => substr($updated ?: '--:--', 0, 16),
         'stocks' => normalizeMarketRows($data['stocks'] ?? [], 4, true),
-        'fx' => normalizeMarketRows($data['fx'] ?? [], 2, true),
+        'fx' => normalizeMarketRows($data['fx'] ?? [], 3, true),
         'commodities' => normalizeMarketRows($data['commodities'] ?? [], 3, true),
+        'crypto' => normalizeMarketRows($data['crypto'] ?? [], 3, true),
     ];
 }
 
@@ -117,6 +124,15 @@ function readMarketCache($path) {
     $raw = @file_get_contents($path);
     $data = $raw ? json_decode($raw, true) : null;
     return is_array($data) ? $data : null;
+}
+
+function marketFeedMatchesSeries($data, $series) {
+    if (!is_array($data)) return false;
+    foreach ($series as $group => $entries) {
+        if (!is_array($data[$group] ?? null)) return false;
+        if (array_column($data[$group], 'symbol') !== array_column($entries, 'label')) return false;
+    }
+    return true;
 }
 
 function sampleMarketSpark($values, $limit = 8) {
@@ -143,7 +159,7 @@ function yahooChartUrl($ticker) {
 function fetchMarketCharts($tickers) {
     $responses = [];
 
-    // Fetch all nine series concurrently when PHP cURL is available. This
+    // Fetch all thirteen series concurrently when PHP cURL is available. This
     // keeps the first uncached dashboard request inside the ESP32 timeout.
     if (function_exists('curl_multi_init')) {
         $multi = curl_multi_init();
@@ -240,6 +256,7 @@ function fetchLiveMarketFeed($series) {
         'stocks'=>[],
         'fx'=>[],
         'commodities'=>[],
+        'crypto'=>[],
     ];
     foreach ($series as $group => $entries) {
         foreach ($entries as $entry) {
@@ -272,7 +289,10 @@ function writeMarketCache($path, $data) {
 function loadMarketFeed($path, $series, $cacheSeconds) {
     $cached = readMarketCache($path);
     $modified = @filemtime($path);
-    if ($cached !== null && $modified !== false && (time() - $modified) < $cacheSeconds) {
+    // A changed series list (for example adding crypto) refreshes immediately,
+    // even when the old cache is still within its normal 15-minute lifetime.
+    if (marketFeedMatchesSeries($cached, $series)
+        && $modified !== false && (time() - $modified) < $cacheSeconds) {
         return normalizeMarketFeed($cached);
     }
 
@@ -282,7 +302,8 @@ function loadMarketFeed($path, $series, $cacheSeconds) {
         return normalizeMarketFeed($fresh);
     }
 
-    // Keep displaying the last complete snapshot when the provider is down.
+    // Retain the previous snapshot on failure, including older schemas without
+    // crypto or the third FX row. Missing optional groups normalize to [].
     return normalizeMarketFeed($cached);
 }
 
