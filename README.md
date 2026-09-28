@@ -40,11 +40,13 @@ height slightly differently.
 
 The Spectra 6 panel has no partial refresh and a full redraw takes roughly 15 to 20 seconds. The default scheduled update is therefore 30 minutes. The green hardware button can request an immediate refresh. Avoid short refresh intervals, especially on battery power.
 
+The API restart timer is set to `0s`. With ESPHome's default of 15 minutes the device restarts whenever no Home Assistant client is connected, and every restart is a full redraw. Battery, Wi-Fi strength and IP address are read immediately before each redraw.
+
 The current ESPHome configuration keeps Wi-Fi and the Home Assistant API active, so it is intended primarily for USB-C power. Reaching the advertised long battery runtime would require a separate deep-sleep profile; while asleep, the device cannot react immediately to Home Assistant or button-driven network actions.
 
 ## Data flow
 
-`weather-eink.php` collects local weather data from Home Assistant, current temperatures for all nine cities in one batched Open-Meteo request, and market data for the configured indices, currencies, commodities and cryptocurrencies. Quotes may be delayed. Open-Meteo does not require an API key for this request, but PHP must have outbound HTTPS and `allow_url_fopen` enabled.
+`tagent-data-eink.php` collects local weather data from Home Assistant, current temperatures for all nine cities in one batched Open-Meteo request, and market data for the configured indices, currencies, commodities and cryptocurrencies. Quotes may be delayed. Open-Meteo does not require an API key for this request, but PHP must have outbound HTTPS and `allow_url_fopen` enabled.
 
 Market data is fetched from Yahoo Finance's chart endpoint and cached for 15 minutes in `market-data.json`. PHP cURL is preferred because it retrieves all thirteen series concurrently; a stream-based fallback is included. A failed refresh keeps the previous cache rather than replacing it with partial data. Adding or changing a configured series triggers an immediate refresh, even if the existing cache is less than 15 minutes old. Yahoo's endpoint is convenient for a personal dashboard but is not a contracted market-data service and may change; use a licensed provider before relying on the values commercially or for trading decisions.
 
@@ -56,7 +58,7 @@ The Wi-Fi percentage is an RSSI quality estimate, clamped to 0-100% using `2 * (
 
 Open-Meteo data is CC BY 4.0 and requires attribution. The display therefore includes `WX OPEN-METEO.COM` next to the city section. The free endpoint is suitable for non-commercial prototyping; review Open-Meteo's current licence or commercial plan before commercial deployment.
 
-Copy `market-data-example.json` to `market-data.json` only when an offline display test is needed. The values in the example are display/test data, not live quotes. Once the cache is older than 15 minutes, `weather-eink.php` attempts to replace it with live delayed data.
+Copy `market-data-example.json` to `market-data.json` only when an offline display test is needed. The values in the example are display/test data, not live quotes. Once the cache is older than 15 minutes, `tagent-data-eink.php` attempts to replace it with live delayed data.
 
 `data-feed-example.json` shows the combined response consumed by ESPHome.
 

@@ -37,8 +37,10 @@ esp32:
 api:
   encryption:
     key: !secret api_encryption_key
-  # 15 min without HA contact = reboot.
-  reboot_timeout: 15min
+  # The dashboard gets all its data over HTTP and runs fine without a Home
+  # Assistant connection. The default 15 min restart would redraw the panel
+  # four times an hour when no API client is connected, so it is turned off.
+  reboot_timeout: 0s
 
 ota:
   - platform: esphome
@@ -412,7 +414,7 @@ script:
       - light.turn_on: onboard_led
       - lambda: 'id(render_pending) = false;'
       - http_request.get:
-          url: "http://192.168.68.114/weather-eink.php"
+          url: "http://192.168.68.114/tagent-data-eink.php"
           capture_response: true
           max_response_buffer_size: 16384
           on_response:
@@ -580,6 +582,12 @@ script:
           condition:
             lambda: 'return id(data_ready) && id(render_pending);'
           then:
+            # The sensors poll once a minute at a random offset, so right
+            # after boot they have no reading yet. Read them now, in this
+            # order, so the status line never shows a stale or empty value.
+            - component.update: battery_voltage
+            - component.update: battery_pct
+            - component.update: wifi_rssi
             - component.update: my_display
       - light.turn_off: onboard_led
       # 5 consecutive failures = something is stuck, restart to recover.
@@ -778,11 +786,12 @@ display:
                 "%s", id(wx_loc).c_str());
 
       // Fixed superscript ring matches the approved reference without
-      // relying on the font's degree-glyph bearing or baseline.
+      // relying on the font's degree-glyph bearing or baseline. At x=442 it
+      // clears every last digit, including the flat top of a 7.
       it.printf(436, 10, id(f_big), BLACK, TextAlign::TOP_RIGHT,
                 "%.1f", id(wx_temp));
-      it.filled_circle(440, 21, 7, RED);
-      it.filled_circle(440, 21, 4, WHITE);
+      it.filled_circle(442, 21, 7, RED);
+      it.filled_circle(442, 21, 4, WHITE);
       it.printf(438, 68, id(f_mono_xs), BLUE, TextAlign::TOP_RIGHT,
                 "LUFT %d%%  INNE %.1f°", id(wx_hum), id(wx_temp_in));
 
